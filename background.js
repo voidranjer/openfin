@@ -8,16 +8,9 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'RESPONSE_BODY') {
-    console.log('Background received:', message.url, message.body);
+  const apiPattern = /transaction-history/;
+  if (message.type === 'RESPONSE_BODY' && apiPattern.test(message.url)) {
+    console.log('Background received:', message.url, JSON.parse(message.body));
     // Process the intercepted data here
-  }
-});
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'RESPONSE_BODY' && message.url.contains('transaction-history')) {
-    console.log(message.body);
-    // chrome.storage.local.get('tip').then(sendResponse);
-    // return true;
   }
 });

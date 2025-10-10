@@ -4,7 +4,7 @@ window.fetch = function (...args) {
   return originalFetch.apply(this, args).then(response => {
     response.clone().text().then(body => {
       console.log('Fetch URL:', args[0]);
-      console.log('Response body:', body);
+      // console.log('Response body:', body);
       // Send to bridge script via postMessage
       window.postMessage({
         source: 'openfin-content',
@@ -30,7 +30,7 @@ XHR.open = function (method, url) {
 XHR.send = function () {
   this.addEventListener('load', function () {
     console.log('XHR URL:', this._url);
-    console.log('Response:', this.response);
+    // console.log('Response:', this.response);
     window.postMessage({
       source: 'openfin-content',
       type: 'RESPONSE_BODY',
