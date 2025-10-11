@@ -1,5 +1,12 @@
+interface PostMessageData {
+  source: string;
+  type: string;
+  url: string;
+  body: string;
+}
+
 // Bridge script - runs in isolated world with access to chrome APIs
-window.addEventListener('message', (event) => {
+window.addEventListener('message', (event: MessageEvent<PostMessageData>) => {
   // Only accept messages from same origin
   if (event.source !== window) return;
   

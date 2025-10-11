@@ -4,17 +4,17 @@
   "version": "1.0",
   "manifest_version": 3,
   "action": {
-    "default_popup": "index.html",
-    "default_icon": "openfin.png"
+    "default_popup": "dist/index.html",
+    "default_icon": "src/chrome/openfin.png"
   },
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "dist/chrome/background.js",
     "type": "module"
   },
   "content_scripts": [
     {
       "js": [
-        "content.js"
+        "dist/chrome/content.js"
       ],
       "matches": [
         "<all_urls>"
@@ -24,7 +24,7 @@
     },
     {
       "js": [
-        "bridge.js"
+        "dist/chrome/bridge.js"
       ],
       "matches": [
         "<all_urls>"
