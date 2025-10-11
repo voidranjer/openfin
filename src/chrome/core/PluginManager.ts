@@ -11,8 +11,6 @@ export default class PluginManager {
     return this.plugins.find((plugin) => {
       const pattern = plugin.getUrlPattern();
       if (pattern instanceof RegExp) {
-        console.log(url);
-        console.log(pattern.test(url));
         return pattern.test(url);
       } else if (typeof pattern === 'string') {
         return url.includes(pattern);

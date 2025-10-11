@@ -18,7 +18,7 @@ window.fetch = function (...args: Parameters<typeof fetch>) {
   return originalFetch.apply(this, args).then(response => {
     response.clone().text().then(body => {
       const fullUrl = new URL(args[0] as string, window.location.href).href;
-      console.log('Fetch URL:', fullUrl);
+      // console.log('Fetch URL:', fullUrl);
       // console.log('Response body:', body);
       // Send to bridge script via postMessage
       const messageData: PostMessageData = {
@@ -45,7 +45,7 @@ XMLHttpRequest.prototype.open = function(method: string, url: string | URL, asyn
 XMLHttpRequest.prototype.send = function(body?: Document | XMLHttpRequestBodyInit | null) {
   this.addEventListener('load', function() {
     const fullUrl = this._url?.startsWith('http') ? this._url : `${window.location.origin}${this._url}`;
-    console.log('XHR URL:', fullUrl);
+    // console.log('XHR URL:', fullUrl);
     // console.log('Response:', this.response);
     const messageData: PostMessageData = {
       source: 'openfin-content',
