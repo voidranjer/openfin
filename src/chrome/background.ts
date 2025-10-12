@@ -1,6 +1,9 @@
 // import FireflyClient from "./core/FireflyClient";
 import PluginManager from "./core/PluginManager";
-import { isRestRequestEvent } from "./core/types/requestBodyPipeline";
+import {
+  isRestRequestEvent,
+  type RestRequestEvent,
+} from "./core/types/requestBodyPipeline";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 
 const pluginManager = new PluginManager();
@@ -24,13 +27,22 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message: unknown) => {
   // Check if message instance of RestRequestEvent
-  if (isRestRequestEvent(message)) {
+  if (isRestRequestEvent(message) && message.source === "bridge") {
     const output = pluginManager
       .findMatchingPlugin(message.url)
       ?.parseResponse(JSON.parse(message.body));
 
     if (output) {
-      chrome.runtime.sendMessage({ message: "foo!", payload: output });
+      const forwardedMessage: RestRequestEvent = {
+        type: message.type,
+        source: "background",
+        url: message.url,
+        body: JSON.stringify(output),
+      };
+
+      console.log("Background forwarding message:", forwardedMessage);
+
+      chrome.runtime.sendMessage(forwardedMessage);
 
       // fireflyClient.postTransactions(output);
     }

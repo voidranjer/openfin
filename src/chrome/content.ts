@@ -1,5 +1,3 @@
-import type { RestRequestEvent } from "./core/types/requestBodyPipeline";
-
 // Extend XMLHttpRequest to include our custom property
 declare global {
   interface XMLHttpRequest {
@@ -17,10 +15,11 @@ window.fetch = function (...args: Parameters<typeof fetch>) {
       .then((body) => {
         const fullUrl = new URL(args[0] as string, window.location.href).href;
 
-        const messageData: RestRequestEvent = {
+        const messageData = {
           type: "openfin-rest-request",
           url: fullUrl,
           body: body,
+          source: "content",
         };
 
         // Send to bridge script via postMessage
@@ -54,10 +53,11 @@ XMLHttpRequest.prototype.send = function (
       ? this._url
       : `${window.location.origin}${this._url}`;
 
-    const messageData: RestRequestEvent = {
+    const messageData = {
       type: "openfin-rest-request",
       url: fullUrl,
       body: this.response as string,
+      source: "content",
     };
 
     // Send to bridge script via postMessage
