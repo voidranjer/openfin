@@ -1,73 +1,111 @@
-# React + TypeScript + Vite
+# OpenFin Browser Extension
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Chrome extension that intercepts HTTP requests (fetch/XMLHttpRequest) from web pages to extract financial transaction data and transform it for external APIs like Firefly III.
 
-Currently, two official plugins are available:
+## Architecture Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This extension uses a multi-layered architecture to safely intercept and process web requests:
 
-## React Compiler
+### Core Components
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Content Script** (`src/chrome/content.ts`)
+2. **Bridge Script** (`src/chrome/bridge.ts`)
+3. **Background Service Worker** (`src/chrome/background.ts`)
+4. **Plugin System** (`src/chrome/core/`)
 
-## Expanding the ESLint configuration
+### Data Flow
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+Web Page → Content Script → Bridge → Background → Plugin Manager → External API
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Request Interception Architecture
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 1. Content Script Layer
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**File**: `src/chrome/content.ts`
+
+The content script runs in the context of web pages and intercepts HTTP requests by monkey-patching the native APIs:
+
+- **Fetch Interception**: Overrides `window.fetch` to capture responses
+- **XMLHttpRequest Interception**: Patches `XMLHttpRequest.prototype.open` and `XMLHttpRequest.prototype.send`
+- **Response Processing**: Clones and reads response bodies as text
+- **Message Forwarding**: Posts intercepted data to the bridge script via `window.postMessage`
+
+### 2. Bridge Script Layer
+
+**File**: `src/chrome/bridge.ts`
+
+Acts as a secure communication bridge between the content script and background script:
+
+- **Isolated Execution**: Runs in an isolated world with access to Chrome extension APIs
+- **Message Filtering**: Only processes messages from the same origin with type `openfin-rest-request`
+- **API Forwarding**: Relays validated messages to the background script via `chrome.runtime.sendMessage`
+
+### 3. Background Service Worker
+
+**File**: `src/chrome/background.ts`
+
+Handles business logic and external API communication:
+
+- **Plugin Management**: Registers and manages financial institution plugins
+- **URL Matching**: Finds appropriate plugins based on request URLs
+- **Data Processing**: Parses response bodies using matched plugins
+- **External Integration**: Sends processed transactions to external APIs (Firefly III)
+
+### 4. Plugin System
+
+**Base Plugin Class** (`src/chrome/core/Plugin.ts`):
+
+```typescript
+abstract class Plugin<ApiResponse = unknown> {
+  abstract getUrlPattern(): RegExp | string;
+  abstract parseResponse(responseBody: ApiResponse): FireflyTransaction[];
+}
 ```
+
+**Plugin Manager** (`src/chrome/core/PluginManager.ts`):
+
+- Maintains registry of active plugins
+- Matches URLs against plugin patterns
+- Routes responses to appropriate parsers
+
+**Example Plugin** (`src/chrome/plugins/ScotiabankScenePlus.ts`):
+
+- URL Pattern: `/secure\.scotiabank\.com.*transaction-history.*accountType=CREDITCARD/`
+- Transforms Scotiabank API responses into standardized FireflyTransaction objects
+
+## Message Protocol
+
+### RestRequestEvent Type
+
+```typescript
+type RestRequestEvent = {
+  type: "openfin-rest-request";
+  url: string;
+  body: string;
+};
+```
+
+### Communication Flow
+
+1. Content script captures HTTP response
+2. Creates `RestRequestEvent` with response data
+3. Posts message to bridge via `window.postMessage`
+4. Bridge validates and forwards to background via `chrome.runtime.sendMessage`
+5. Background processes with plugin system
+6. Transformed data sent to external APIs
+
+## Security Considerations
+
+- **Origin Validation**: Bridge only accepts messages from same origin
+- **Type Safety**: TypeScript type guards validate message structure
+- **Isolated Execution**: Bridge runs in isolated world preventing page script interference
+- **API Permissions**: Background script has controlled access to Chrome extension APIs
+
+## Adding New Financial Institution Support
+
+1. Create new plugin extending `Plugin<T>` base class
+2. Implement `getUrlPattern()` to match institution's API URLs
+3. Implement `parseResponse()` to transform API responses to `FireflyTransaction[]`
+4. Register plugin in `background.ts` with `pluginManager.register()`
