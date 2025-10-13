@@ -27,6 +27,19 @@ chrome.action.onClicked.addListener(async (tab) => {
 
   const plugin = pluginManager.findMatchingPlugin(tab.url);
 
+  const pluginData = plugin
+    ? {
+        displayName: plugin.displayName,
+        iconUrl: plugin.iconUrl,
+        fireflyAccountName: plugin.fireflyAccountName,
+        baseUrlPattern: plugin.getBaseUrlPattern().source,
+        apiUrlPattern: plugin.getApiUrlPattern().source,
+      }
+    : null;
+
+  // Store current plugin state in storage
+  await chrome.storage.local.set({ currentPlugin: pluginData });
+
   try {
     // Open the side panel
     await chrome.sidePanel.open({ tabId: tab.id });
@@ -35,15 +48,7 @@ chrome.action.onClicked.addListener(async (tab) => {
     const pluginStateMessage: PluginStateEvent = {
       type: "PLUGIN_STATE_UPDATE",
       source: "background",
-      plugin: plugin
-        ? {
-            displayName: plugin.displayName,
-            iconUrl: plugin.iconUrl,
-            fireflyAccountName: plugin.fireflyAccountName,
-            baseUrlPattern: plugin.getBaseUrlPattern().source,
-            apiUrlPattern: plugin.getApiUrlPattern().source,
-          }
-        : null,
+      plugin: pluginData,
       url: tab.url,
     };
 
@@ -61,24 +66,29 @@ chrome.action.onClicked.addListener(async (tab) => {
 });
 
 // Helper function to send plugin state message
-function sendPluginStateMessage(tab: chrome.tabs.Tab) {
+async function sendPluginStateMessage(tab: chrome.tabs.Tab) {
   if (!tab.url) return;
 
   const plugin = pluginManager.findMatchingPlugin(tab.url);
+
+  const pluginData = plugin
+    ? {
+        displayName: plugin.displayName,
+        iconUrl: plugin.iconUrl,
+        fireflyAccountName: plugin.fireflyAccountName,
+        baseUrlPattern: plugin.getBaseUrlPattern().source,
+        apiUrlPattern: plugin.getApiUrlPattern().source,
+      }
+    : null;
+
+  // Store current plugin state in storage
+  await chrome.storage.local.set({ currentPlugin: pluginData });
 
   // Send message about current plugin state to App.tsx
   const pluginStateMessage: PluginStateEvent = {
     type: "PLUGIN_STATE_UPDATE",
     source: "background",
-    plugin: plugin
-      ? {
-          displayName: plugin.displayName,
-          iconUrl: plugin.iconUrl,
-          fireflyAccountName: plugin.fireflyAccountName,
-          baseUrlPattern: plugin.getBaseUrlPattern().source,
-          apiUrlPattern: plugin.getApiUrlPattern().source,
-        }
-      : null,
+    plugin: pluginData,
     url: tab.url,
   };
 

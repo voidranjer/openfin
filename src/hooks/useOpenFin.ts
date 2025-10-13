@@ -16,8 +16,8 @@ export function useOpenFin() {
     useState<PluginStateEvent["plugin"]>(null);
 
   useEffect(() => {
-    // Load stored transactions when action icon clicked
-    const loadStoredTransactions = async () => {
+    // Load stored data when component mounts
+    const loadStoredData = async () => {
       try {
         // Check if chrome APIs are available
         if (!chrome?.storage?.local) {
@@ -25,7 +25,12 @@ export function useOpenFin() {
           return;
         }
 
-        const result = await chrome.storage.local.get("transactions");
+        const result = await chrome.storage.local.get([
+          "transactions",
+          "currentPlugin",
+        ]);
+
+        // Load stored transactions
         if (result.transactions) {
           const storedTransactions: FireflyTransaction[] = result.transactions;
 
@@ -35,16 +40,21 @@ export function useOpenFin() {
           setTransactions(dataTableTransactions);
         }
 
+        // Load stored plugin state
+        if (result.currentPlugin) {
+          setCurrentPlugin(result.currentPlugin);
+        }
+
         // Clear the badge when action icon clicked
         if (chrome?.action?.setBadgeText) {
           chrome.action.setBadgeText({ text: "" });
         }
       } catch (error) {
-        console.error("Failed to load stored transactions:", error);
+        console.error("Failed to load stored data:", error);
       }
     };
 
-    loadStoredTransactions();
+    loadStoredData();
 
     function handleMessage(message: unknown) {
       // Handle transaction messages
