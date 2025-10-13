@@ -7,6 +7,8 @@ export interface StorageSchema {
   pluginTransactions: Record<string, FireflyTransaction[]>;
   currentPlugin: PluginStateEvent["plugin"];
   registeredPlugins: RegisteredPlugin[];
+  fireflyHost: string;
+  fireflyToken: string;
 }
 
 type StorageKey = keyof StorageSchema;
