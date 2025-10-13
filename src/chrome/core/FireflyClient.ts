@@ -4,29 +4,28 @@ import { parseDateReverse } from "./utils";
 export default class FireflyClient {
   private fireflyUrl: string;
   private fireflyToken: string;
-  
+
   constructor(fireflyUrl: string, fireflyToken: string) {
-    this.fireflyUrl = fireflyUrl;
+    this.fireflyUrl = fireflyUrl.replace(/\/$/, "");
     this.fireflyToken = fireflyToken;
   }
 
   async isDuplicate(external_id: string) {
-    const url = new URL(`${this.fireflyUrl}/api/v1/search/transactions`);
-    url.searchParams.append('query', `external_id_is:'${external_id}'`);
-    
-    const response = await fetch(url.toString(), {
-      method: 'GET',
+    const url = `${this.fireflyUrl}/api/v1/search/transactions?query=external_id_is:${external_id}`;
+
+    const response = await fetch(url, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
         Authorization: `Bearer ${this.fireflyToken}`,
       },
     });
-    
+
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`);
     }
-    
+
     const body = await response.json();
     return body.meta.pagination.total > 0;
   }
@@ -58,21 +57,18 @@ export default class FireflyClient {
     let numSuccess = 0;
     let numErrors = 0;
     const transactionsToPost = validTransactions.map(async (t) => {
-      const response = await fetch(
-        `${this.fireflyUrl}/api/v1/transactions`,
-        {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${this.fireflyToken}`,
-          },
-          body: JSON.stringify({
-            error_if_duplicate_hash: true,
-            transactions: [t],
-          }),
-        }
-      );
+      const response = await fetch(`${this.fireflyUrl}/api/v1/transactions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${this.fireflyToken}`,
+        },
+        body: JSON.stringify({
+          error_if_duplicate_hash: true,
+          transactions: [t],
+        }),
+      });
 
       const responseStatus = response.status;
       const responseBody = await response.json();
