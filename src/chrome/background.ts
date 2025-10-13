@@ -5,11 +5,15 @@ import {
   type RestRequestEvent,
   type PluginStateEvent,
 } from "./core/types/requestBodyPipeline";
+import RogersBank from "./plugins/RogersBank";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 
 const pluginManager = new PluginManager();
 pluginManager.register(
   new ScotiabankScenePlus("Scene Plus VISA") // TODO: change to actual name
+);
+pluginManager.register(
+  new RogersBank("Rogers Red") // TODO: change to actual name
 );
 
 // Store registered plugins information in storage
