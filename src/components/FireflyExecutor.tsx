@@ -132,12 +132,24 @@ export default function FireflyExecutor({
         <h3 className="text-lg font-semibold text-gray-800">
           Firefly III Configuration
         </h3>
-        {saveStatus === "saving" && (
-          <span className="text-xs text-blue-600">Saving...</span>
-        )}
-        {saveStatus === "saved" && (
-          <span className="text-xs text-green-600">✓ Saved</span>
-        )}
+        <div className="flex items-center gap-2">
+          {(fireflyHost || fireflyToken) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearSavedData}
+              className="text-xs"
+            >
+              Clear Saved Data
+            </Button>
+          )}
+          {saveStatus === "saving" && (
+            <span className="text-xs text-blue-600">Saving...</span>
+          )}
+          {saveStatus === "saved" && (
+            <span className="text-xs text-green-600">✓ Saved</span>
+          )}
+        </div>
       </div>
       <div className="space-y-3">
         <div>
@@ -173,22 +185,10 @@ export default function FireflyExecutor({
           />
         </div>
         <div className="flex justify-between items-center pt-2">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">
-              {transactions.length} transaction
-              {transactions.length !== 1 ? "s" : ""} ready to post
-            </span>
-            {(fireflyHost || fireflyToken) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearSavedData}
-                className="text-xs"
-              >
-                Clear Saved Data
-              </Button>
-            )}
-          </div>
+          <span className="text-sm text-gray-600">
+            {transactions.length} transaction
+            {transactions.length !== 1 ? "s" : ""} ready to post
+          </span>
           <Button
             onClick={handleExecute}
             disabled={
