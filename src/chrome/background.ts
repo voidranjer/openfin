@@ -7,6 +7,8 @@ import {
 } from "./core/types/requestBodyPipeline";
 import RogersBank from "./plugins/RogersBank";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
+import { StorageOperations } from "./core/StorageManager";
+import { badgeManager } from "./core/BadgeManager";
 
 const pluginManager = new PluginManager();
 pluginManager.register(
@@ -18,9 +20,7 @@ pluginManager.register(
 
 // Store registered plugins information in storage
 const registeredPlugins = pluginManager.getRegisteredPlugins();
-chrome.storage.local.set({
-  registeredPlugins: registeredPlugins,
-});
+StorageOperations.storeRegisteredPlugins(registeredPlugins);
 
 /* Sidebar */
 // Handle extension icon clicks
@@ -42,7 +42,7 @@ chrome.action.onClicked.addListener(async (tab) => {
     : null;
 
   // Store current plugin state in storage
-  await chrome.storage.local.set({ currentPlugin: pluginData });
+  await StorageOperations.updateCurrentPlugin(pluginData);
 
   try {
     // Open the side panel
@@ -86,7 +86,7 @@ async function sendPluginStateMessage(tab: chrome.tabs.Tab) {
     : null;
 
   // Store current plugin state in storage
-  await chrome.storage.local.set({ currentPlugin: pluginData });
+  await StorageOperations.updateCurrentPlugin(pluginData);
 
   // Send message about current plugin state to App.tsx
   const pluginStateMessage: PluginStateEvent = {
@@ -138,11 +138,10 @@ chrome.runtime.onMessage.addListener(async (message: unknown) => {
 
     if (output && output.length > 0) {
       // Store transactions in background storage (replace old content)
-      await chrome.storage.local.set({ transactions: output });
+      await StorageOperations.replaceTransactions(output);
 
       // Show notification badge on popup icon
-      chrome.action.setBadgeText({ text: output.length.toString() });
-      chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
+      await badgeManager.showTransactionCount(output.length);
 
       const forwardedMessage: RestRequestEvent = {
         type: message.type,

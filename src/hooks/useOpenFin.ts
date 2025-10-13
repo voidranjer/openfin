@@ -5,6 +5,8 @@ import {
   type PluginStateEvent,
 } from "@/chrome/core/types/requestBodyPipeline";
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
+import { StorageOperations } from "@/chrome/core/StorageManager";
+import { badgeManager } from "@/chrome/core/BadgeManager";
 
 export function useOpenFin() {
   const [transactions, setTransactions] = useState<FireflyTransaction[]>([]);
@@ -15,32 +17,13 @@ export function useOpenFin() {
     // Load stored data when component mounts
     const loadStoredData = async () => {
       try {
-        // Check if chrome APIs are available
-        if (!chrome?.storage?.local) {
-          console.warn("Chrome storage API not available");
-          return;
-        }
+        const data = await StorageOperations.loadInitialData();
 
-        const result = await chrome.storage.local.get([
-          "transactions",
-          "currentPlugin",
-        ]);
-
-        // Load stored transactions
-        if (result.transactions) {
-          const storedTransactions: FireflyTransaction[] = result.transactions;
-          setTransactions(storedTransactions);
-        }
-
-        // Load stored plugin state
-        if (result.currentPlugin) {
-          setCurrentPlugin(result.currentPlugin);
-        }
+        setTransactions(data.transactions);
+        setCurrentPlugin(data.currentPlugin);
 
         // Clear the badge when action icon clicked
-        if (chrome?.action?.setBadgeText) {
-          chrome.action.setBadgeText({ text: "" });
-        }
+        await badgeManager.clearBadge();
       } catch (error) {
         console.error("Failed to load stored data:", error);
       }
@@ -92,19 +75,7 @@ export function useOpenFin() {
       );
 
       // Update chrome storage
-      if (chrome?.storage?.local) {
-        const result = await chrome.storage.local.get(["transactions"]);
-        const storedTransactions: FireflyTransaction[] =
-          result.transactions || [];
-
-        const updatedTransactions = storedTransactions.map((transaction) =>
-          transaction.external_id === external_id
-            ? { ...transaction, ...updatedFields }
-            : transaction
-        );
-
-        await chrome.storage.local.set({ transactions: updatedTransactions });
-      }
+      await StorageOperations.updateTransaction(external_id, updatedFields);
     } catch (error) {
       console.error("Failed to update transaction:", error);
     }

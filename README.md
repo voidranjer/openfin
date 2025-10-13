@@ -20,14 +20,17 @@ This extension uses a multi-layered architecture to safely intercept and process
 2. **Bridge Script** (`src/chrome/bridge.ts`) - Secure communication bridge
 3. **Background Service Worker** (`src/chrome/background.ts`) - Data processing and storage
 4. **Plugin System** (`src/chrome/core/`) - Extensible parsing framework
-5. **Popup Interface** (`src/App.tsx`) - User interface for viewing transactions
+5. **Storage Framework** (`src/chrome/core/StorageManager.ts`, `src/chrome/core/BadgeManager.ts`) - Type-safe storage operations
+6. **Popup Interface** (`src/App.tsx`) - User interface for viewing transactions
 
 ### Data Flow
 
 ```text
-Web Page → Content Script → Bridge → Background → [Storage + Badge] → Popup UI
+Web Page → Content Script → Bridge → Background → [StorageManager + BadgeManager] → Popup UI
                                         ↓
                                    Plugin Manager → External API
+                                        ↓
+                                 StorageOperations ← React Components
 ```
 
 ## Request Interception Architecture
@@ -124,14 +127,39 @@ When new transactions are detected, the extension provides visual feedback:
 - **Badge Indicator**: Shows the number of captured transactions on the extension icon
 - **Auto-clear**: Badge is cleared when the popup is opened
 
-### Storage Schema
+### Storage Framework
+
+The extension now uses a centralized storage framework that eliminates code duplication and provides type safety:
+
+- **StorageManager**: Core storage operations with type safety and error handling
+- **StorageOperations**: High-level domain-specific storage operations
+- **BadgeManager**: Centralized Chrome extension badge management
+- **useStorageOperations**: React hook for storage operations
+
+#### Storage Schema
 
 ```typescript
-// Chrome local storage structure
-{
-  transactions: FireflyTransaction[] // Array of processed transactions
+interface StorageSchema {
+  transactions: FireflyTransaction[];
+  currentPlugin: PluginStateEvent["plugin"];
+  registeredPlugins: RegisteredPlugin[];
 }
 ```
+
+#### Usage Examples
+
+```typescript
+// Load initial data
+const data = await StorageOperations.loadInitialData();
+
+// Update a transaction
+await StorageOperations.updateTransaction(id, { category: 'Food' });
+
+// Show badge notification
+await badgeManager.showTransactionCount(5);
+```
+
+For detailed documentation, see [`docs/STORAGE_FRAMEWORK.md`](docs/STORAGE_FRAMEWORK.md).
 
 ## Security Considerations
 
@@ -144,9 +172,28 @@ When new transactions are detected, the extension provides visual feedback:
 ## Adding New Financial Institution Support
 
 1. Create new plugin extending `Plugin<T>` base class
-2. Implement `getUrlPattern()` to match institution's API URLs
-3. Implement `parseResponse()` to transform API responses to `FireflyTransaction[]`
-4. Register plugin in `background.ts` with `pluginManager.register()`
+2. Implement `getBaseUrlPattern()` to match institution's base URLs
+3. Implement `getApiUrlPattern()` to match API request URLs  
+4. Implement `parseResponse()` to transform API responses to `FireflyTransaction[]`
+5. Register plugin in `background.ts` with `pluginManager.register()`
+
+## Code Architecture Improvements
+
+### Storage Framework Refactoring
+
+The codebase has been refactored to eliminate storage-related code duplication through a centralized framework:
+
+- **Before**: Manual `chrome.storage.local` calls scattered throughout components
+- **After**: Type-safe storage operations through `StorageManager` and `StorageOperations`
+- **Benefits**: Reduced code duplication, improved type safety, consistent error handling
+
+### Badge Management
+
+Badge operations are now centralized through `BadgeManager`:
+
+- **Before**: Direct `chrome.action.setBadgeText()` calls in multiple files
+- **After**: Semantic methods like `showTransactionCount()`, `showErrorBadge()`
+- **Benefits**: Consistent badge behavior, easier testing, better maintainability
 
 ## Development
 
@@ -167,3 +214,28 @@ npm run build
 ### Testing
 
 Visit supported financial institution websites and perform actions that generate transaction data. The extension will automatically capture and display the data in the popup interface.
+
+## React Hooks
+
+The extension provides custom React hooks for common operations:
+
+### useOpenFin
+
+Main hook for accessing transaction data and plugin state:
+
+```typescript
+const { transactions, currentPlugin, updateTransaction } = useOpenFin();
+```
+
+### useStorageOperations
+
+Hook for direct access to storage operations:
+
+```typescript
+const { 
+  loadInitialData, 
+  updateTransaction, 
+  loadRegisteredPlugins,
+  clearAllStorage 
+} = useStorageOperations();
+```

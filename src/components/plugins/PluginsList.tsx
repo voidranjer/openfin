@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { StorageOperations } from "@/chrome/core/StorageManager";
 
 export interface RegisteredPlugin {
   displayName: string;
@@ -15,16 +16,9 @@ export default function PluginsList() {
   useEffect(() => {
     const loadPlugins = async () => {
       try {
-        if (!chrome?.storage?.local) {
-          console.warn("Chrome storage API not available");
-          setLoading(false);
-          return;
-        }
-
-        const result = await chrome.storage.local.get("registeredPlugins");
-        if (result.registeredPlugins) {
-          setPlugins(result.registeredPlugins);
-        }
+        const registeredPlugins =
+          await StorageOperations.loadRegisteredPlugins();
+        setPlugins(registeredPlugins);
       } catch (error) {
         console.error("Failed to load registered plugins:", error);
       } finally {
