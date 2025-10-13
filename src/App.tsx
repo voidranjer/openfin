@@ -4,6 +4,7 @@ import "./App.css";
 import DataTable, {
   columns,
   type DataTableTransaction,
+  convertFireflyTransactions,
 } from "@/components/datatable";
 import {
   isRestRequestEvent,
@@ -15,6 +16,37 @@ export default function App() {
   const [transactions, setTransactions] = useState<DataTableTransaction[]>([]);
 
   useEffect(() => {
+    // Load stored transactions when popup opens
+    const loadStoredTransactions = async () => {
+      try {
+        // Check if chrome APIs are available
+        if (!chrome?.storage?.local) {
+          console.warn("Chrome storage API not available");
+          return;
+        }
+
+        const result = await chrome.storage.local.get("transactions");
+        if (result.transactions) {
+          const storedTransactions: FireflyTransaction[] = result.transactions;
+
+          // Convert to DataTableTransaction format
+          const dataTableTransactions =
+            convertFireflyTransactions(storedTransactions);
+
+          setTransactions(dataTableTransactions);
+        }
+
+        // Clear the badge when popup is opened
+        if (chrome?.action?.setBadgeText) {
+          chrome.action.setBadgeText({ text: "" });
+        }
+      } catch (error) {
+        console.error("Failed to load stored transactions:", error);
+      }
+    };
+
+    loadStoredTransactions();
+
     function handleMessage(message: RestRequestEvent) {
       // Only process messages from background source
       if (isRestRequestEvent(message) && message.source === "background") {
@@ -24,20 +56,11 @@ export default function App() {
           );
 
           // Convert to DataTableTransaction format
-          const dataTableTransactions: DataTableTransaction[] =
-            parsedTransactions.map((transaction) => ({
-              type: transaction.type,
-              description: transaction.description,
-              category_name: transaction.category_name,
-              amount: transaction.amount,
-              date: transaction.date,
-            }));
+          const dataTableTransactions =
+            convertFireflyTransactions(parsedTransactions);
 
-          // Add new transactions to existing ones
-          setTransactions((prevTransactions) => [
-            ...prevTransactions,
-            ...dataTableTransactions,
-          ]);
+          // Replace all old content with new transactions
+          setTransactions(dataTableTransactions);
         } catch (error) {
           console.error("Failed to parse transaction data:", error);
         }
@@ -55,7 +78,17 @@ export default function App() {
   return (
     <div className="py-5 px-4">
       <h1 className="text-3xl font-bold mb-3 text-center">OpenFin</h1>
-      <DataTable columns={columns} data={transactions} />
+      {transactions.length === 0 ? (
+        <div className="text-center text-gray-500 py-8">
+          <p>No transactions captured yet.</p>
+          <p className="text-sm mt-2">
+            Visit a supported financial website to see transaction data appear
+            here automatically.
+          </p>
+        </div>
+      ) : (
+        <DataTable columns={columns} data={transactions} />
+      )}
     </div>
   );
 }

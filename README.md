@@ -1,6 +1,14 @@
 # OpenFin Browser Extension
 
-A Chrome extension that intercepts HTTP requests (fetch/XMLHttpRequest) from web pages to extract financial transaction data and transform it for external APIs like Firefly III.
+A Chrome extension that intercepts HTTP requests (fetch/XMLHttpRequest) from web pages to extract financial transaction data and transform it for external APIs like Firefly III. The extension captures financial data in the background and provides visual feedback via badge indicators when new transactions are detected.
+
+## Key Features
+
+- **Background Request Capture**: Monitors and captures financial transactions even when the popup is closed
+- **Badge Indicators**: Shows visual feedback on the extension icon when new transactions are found
+- **Persistent Storage**: Stores captured transactions locally so they persist across browser sessions
+- **Plugin Architecture**: Extensible system for adding support for new financial institutions
+- **Security Focused**: Multi-layered security with isolated execution contexts
 
 ## Architecture Overview
 
@@ -8,15 +16,18 @@ This extension uses a multi-layered architecture to safely intercept and process
 
 ### Core Components
 
-1. **Content Script** (`src/chrome/content.ts`)
-2. **Bridge Script** (`src/chrome/bridge.ts`)
-3. **Background Service Worker** (`src/chrome/background.ts`)
-4. **Plugin System** (`src/chrome/core/`)
+1. **Content Script** (`src/chrome/content.ts`) - Intercepts web requests
+2. **Bridge Script** (`src/chrome/bridge.ts`) - Secure communication bridge
+3. **Background Service Worker** (`src/chrome/background.ts`) - Data processing and storage
+4. **Plugin System** (`src/chrome/core/`) - Extensible parsing framework
+5. **Popup Interface** (`src/App.tsx`) - User interface for viewing transactions
 
 ### Data Flow
 
 ```text
-Web Page → Content Script → Bridge → Background → Plugin Manager → External API
+Web Page → Content Script → Bridge → Background → [Storage + Badge] → Popup UI
+                                        ↓
+                                   Plugin Manager → External API
 ```
 
 ## Request Interception Architecture
@@ -96,12 +107,39 @@ type RestRequestEvent = {
 5. Background processes with plugin system
 6. Transformed data sent to external APIs
 
+## Background Processing & Storage
+
+### Persistent Data Capture
+
+The extension now captures financial transaction data in the background, even when the popup is closed:
+
+- **Background Storage**: Transactions are stored in `chrome.storage.local` immediately when captured
+- **Data Replacement**: Each new request replaces all previously stored transactions to ensure data freshness
+- **Persistent Access**: Stored transactions are automatically loaded when the popup is opened
+
+### Badge Notification System
+
+When new transactions are detected, the extension provides visual feedback:
+
+- **Badge Indicator**: Shows the number of captured transactions on the extension icon
+- **Auto-clear**: Badge is cleared when the popup is opened
+
+### Storage Schema
+
+```typescript
+// Chrome local storage structure
+{
+  transactions: FireflyTransaction[] // Array of processed transactions
+}
+```
+
 ## Security Considerations
 
 - **Origin Validation**: Bridge only accepts messages from same origin
 - **Type Safety**: TypeScript type guards validate message structure
 - **Isolated Execution**: Bridge runs in isolated world preventing page script interference
 - **API Permissions**: Background script has controlled access to Chrome extension APIs
+- **Local Storage**: Transaction data is stored locally and never transmitted to external servers without explicit user consent
 
 ## Adding New Financial Institution Support
 
@@ -109,3 +147,23 @@ type RestRequestEvent = {
 2. Implement `getUrlPattern()` to match institution's API URLs
 3. Implement `parseResponse()` to transform API responses to `FireflyTransaction[]`
 4. Register plugin in `background.ts` with `pluginManager.register()`
+
+## Development
+
+### Building the Extension
+
+```bash
+npm install
+npm run build
+```
+
+### Loading in Chrome
+
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked" and select the project directory
+4. The extension will appear in your extensions list
+
+### Testing
+
+Visit supported financial institution websites and perform actions that generate transaction data. The extension will automatically capture and display the data in the popup interface.

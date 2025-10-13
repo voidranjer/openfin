@@ -13,22 +13,14 @@
   },
   "content_scripts": [
     {
-      "js": [
-        "dist/chrome/content.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ],
+      "js": ["dist/chrome/content.js"],
+      "matches": ["<all_urls>"],
       "run_at": "document_start",
       "world": "MAIN"
     },
     {
-      "js": [
-        "dist/chrome/bridge.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ],
+      "js": ["dist/chrome/bridge.js"],
+      "matches": ["<all_urls>"],
       "run_at": "document_start"
     }
   ],
