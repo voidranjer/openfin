@@ -3,15 +3,30 @@
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
 import { type ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
-export type DataTableTransaction = Pick<
-  FireflyTransaction,
-  "type" | "description" | "category_name" | "amount" | "date"
->;
-
-export const columns: ColumnDef<DataTableTransaction>[] = [
+export const columns: ColumnDef<FireflyTransaction>[] = [
+  {
+    id: "expander",
+    header: "",
+    cell: ({ row }) => {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => row.toggleExpanded()}
+          className="p-1 hover:cursor-pointer"
+        >
+          {row.getIsExpanded() ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </Button>
+      );
+    },
+  },
   {
     accessorKey: "description",
     header: () => <div className="text-center">Description</div>,

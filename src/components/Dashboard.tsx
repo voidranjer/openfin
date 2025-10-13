@@ -1,14 +1,12 @@
 import Header from "@/components/Header";
-import DataTable, {
-  columns,
-  type DataTableTransaction,
-} from "@/components/datatable";
+import DataTable, { columns } from "@/components/datatable";
 import EmptyState from "@/components/EmptyState";
 import type { PluginStateEvent } from "@/chrome/core/types/requestBodyPipeline";
+import type { FireflyTransaction } from "@/chrome/core/types/firefly";
 
 interface DashboardProps {
   plugin: PluginStateEvent["plugin"];
-  transactions: DataTableTransaction[];
+  transactions: FireflyTransaction[];
 }
 
 export default function Dashboard({ plugin, transactions }: DashboardProps) {

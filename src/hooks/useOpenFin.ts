@@ -5,13 +5,9 @@ import {
   type PluginStateEvent,
 } from "@/chrome/core/types/requestBodyPipeline";
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
-import {
-  convertFireflyTransactions,
-  type DataTableTransaction,
-} from "@/components/datatable";
 
 export function useOpenFin() {
-  const [transactions, setTransactions] = useState<DataTableTransaction[]>([]);
+  const [transactions, setTransactions] = useState<FireflyTransaction[]>([]);
   const [currentPlugin, setCurrentPlugin] =
     useState<PluginStateEvent["plugin"]>(null);
 
@@ -33,11 +29,7 @@ export function useOpenFin() {
         // Load stored transactions
         if (result.transactions) {
           const storedTransactions: FireflyTransaction[] = result.transactions;
-
-          // Convert to DataTableTransaction format
-          const dataTableTransactions =
-            convertFireflyTransactions(storedTransactions);
-          setTransactions(dataTableTransactions);
+          setTransactions(storedTransactions);
         }
 
         // Load stored plugin state
@@ -64,12 +56,8 @@ export function useOpenFin() {
             message.body
           );
 
-          // Convert to DataTableTransaction format
-          const dataTableTransactions =
-            convertFireflyTransactions(parsedTransactions);
-
           // Replace all old content with new transactions
-          setTransactions(dataTableTransactions);
+          setTransactions(parsedTransactions);
         } catch (error) {
           console.error("Failed to parse transaction data:", error);
         }
