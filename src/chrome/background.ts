@@ -9,6 +9,7 @@ import RogersBank from "./plugins/RogersBank";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 import { StorageOperations } from "./core/StorageManager";
 import { badgeManager } from "./core/BadgeManager";
+import ScotiabankChequing from "./plugins/ScotiabankChequing";
 
 const pluginManager = new PluginManager();
 pluginManager.register(
@@ -16,6 +17,9 @@ pluginManager.register(
 );
 pluginManager.register(
   new RogersBank("Rogers Red") // TODO: change to actual name
+);
+pluginManager.register(
+  new ScotiabankChequing("Chequing") // TODO: change to actual name
 );
 
 // Store registered plugins information in storage

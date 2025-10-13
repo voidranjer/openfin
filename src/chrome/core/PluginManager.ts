@@ -34,6 +34,7 @@ export default class PluginManager {
     responseBody: string
   ): FireflyTransaction[] | undefined {
     const plugin = this.findPluginForApiUrl(url);
+
     if (plugin) {
       return plugin.parseResponse(JSON.parse(responseBody));
     }

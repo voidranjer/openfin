@@ -1,28 +1,28 @@
 import Plugin from "@/chrome/core/Plugin";
 import { parseDate } from "@/chrome/core/utils";
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
-import type { ScenePlusApiResponse } from "./types/scotiabank";
+import type { ChequingApiResponse } from "./types/scotiabank";
 
-export default class ScotiabankScenePlus extends Plugin<ScenePlusApiResponse> {
+export default class ScotiabankChequing extends Plugin<ChequingApiResponse> {
   constructor(fireflyAccountName: string) {
     super(fireflyAccountName);
-    this.displayName = "Scotiabank Scene+";
+    this.displayName = "Scotiabank Chequing";
     this.iconUrl =
       "https://ofa.on.ca/wp-content/uploads/2023/11/MicrosoftTeams-image-5.png";
   }
 
   getBaseUrlPattern(): RegExp {
-    return /secure\.scotiabank\.com\/accounts\/credit/;
+    return /secure\.scotiabank\.com\/accounts\/chequing/;
   }
 
   getApiUrlPattern(): RegExp {
-    return /transaction-history.*accountType=CREDITCARD/;
+    return /transaction-history.*accountType=DAYTODAY/;
   }
 
-  parseResponse(responseBody: ScenePlusApiResponse) {
+  parseResponse(responseBody: ChequingApiResponse) {
     const transactions: FireflyTransaction[] = [];
 
-    responseBody.data.settled.forEach((t) => {
+    responseBody.data.forEach((t) => {
       const isWithdrawal = t.transactionType === "DEBIT";
       const type = isWithdrawal ? "withdrawal" : "deposit";
       const amount = t.transactionAmount.amount;
