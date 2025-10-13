@@ -53,9 +53,7 @@ export default function PluginsList() {
 
   return (
     <div className="py-5 px-4 max-h-screen flex flex-col overflow-hidden">
-      <h1 className="text-3xl font-bold mb-3 text-center">
-        Registered Plugins
-      </h1>
+      <h1 className="text-3xl font-bold mb-3 text-center">OpenFin</h1>
 
       {/* Non-supported page notice */}
       <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
