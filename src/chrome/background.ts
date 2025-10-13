@@ -137,31 +137,47 @@ chrome.runtime.onMessage.addListener(async (message: unknown) => {
     const output = pluginManager.parseApiResponse(message.url, message.body);
 
     if (output && output.length > 0) {
-      // Store transactions in background storage (replace old content)
-      await StorageOperations.replaceTransactions(output);
+      // Find which plugin this URL belongs to
+      const plugin = pluginManager.findPluginForApiUrl(message.url);
 
-      // Show notification badge on popup icon
-      await badgeManager.showTransactionCount(output.length);
+      if (plugin) {
+        const pluginData = {
+          displayName: plugin.displayName,
+          iconUrl: plugin.iconUrl,
+          fireflyAccountName: plugin.fireflyAccountName,
+          baseUrlPattern: plugin.getBaseUrlPattern().source,
+          apiUrlPattern: plugin.getApiUrlPattern().source,
+        };
 
-      const forwardedMessage: RestRequestEvent = {
-        type: message.type,
-        source: "background",
-        url: message.url,
-        body: JSON.stringify(output),
-      };
-
-      // Send message to popup if it's open
-      try {
-        chrome.runtime.sendMessage(forwardedMessage);
-      } catch {
-        // Popup might not be open, that's okay since data is stored
-        // Suppress the "Receiving end does not exist" error as it's expected
-        console.debug(
-          "No message receiver available (popup/side panel not open)"
+        // Store transactions for the specific plugin
+        await StorageOperations.replaceTransactionsForPlugin(
+          output,
+          pluginData
         );
-      }
 
-      // fireflyClient.postTransactions(output);
+        // Show notification badge on popup icon
+        await badgeManager.showTransactionCount(output.length);
+
+        const forwardedMessage: RestRequestEvent = {
+          type: message.type,
+          source: "background",
+          url: message.url,
+          body: JSON.stringify(output),
+        };
+
+        // Send message to popup if it's open
+        try {
+          chrome.runtime.sendMessage(forwardedMessage);
+        } catch {
+          // Popup might not be open, that's okay since data is stored
+          // Suppress the "Receiving end does not exist" error as it's expected
+          console.debug(
+            "No message receiver available (popup/side panel not open)"
+          );
+        }
+
+        // fireflyClient.postTransactions(output);
+      }
     }
   }
 });

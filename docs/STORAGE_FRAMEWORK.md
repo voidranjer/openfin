@@ -21,24 +21,24 @@ The `StorageManager` class provides low-level, type-safe storage operations:
 import { storageManager } from '@/chrome/core/StorageManager';
 
 // Get single value
-const transactions = await storageManager.get('transactions');
+const pluginTransactions = await storageManager.get('pluginTransactions');
 
 // Get multiple values
-const data = await storageManager.getMultiple(['transactions', 'currentPlugin']);
+const data = await storageManager.getMultiple(['pluginTransactions', 'currentPlugin']);
 
 // Set single value
-await storageManager.set('transactions', newTransactions);
+await storageManager.set('pluginTransactions', { pluginKey: newTransactions });
 
 // Set multiple values
 await storageManager.setMultiple({
-  transactions: newTransactions,
+  pluginTransactions: { pluginKey: newTransactions },
   currentPlugin: pluginData
 });
 
 // Update arrays with transformation
-await storageManager.updateArray('transactions', 
-  (current) => current.filter(t => t.id !== 'remove-me'),
-  [] // default value
+await storageManager.updateArray('pluginTransactions', 
+  (current) => ({ ...current, pluginKey: current.pluginKey.filter(t => t.id !== 'remove-me') }),
+  {} // default value
 );
 ```
 
@@ -49,14 +49,17 @@ The `StorageOperations` class provides domain-specific operations:
 ```typescript
 import { StorageOperations } from '@/chrome/core/StorageManager';
 
-// Load initial data for components
+// Load initial data for components (automatically loads current plugin's transactions)
 const { transactions, currentPlugin } = await StorageOperations.loadInitialData();
 
-// Update a specific transaction
-await StorageOperations.updateTransaction('external-id', { category: 'Food' });
+// Load transactions for a specific plugin
+const pluginTransactions = await StorageOperations.loadTransactionsForPlugin(plugin);
 
-// Replace all transactions
-await StorageOperations.replaceTransactions(newTransactions);
+// Update a specific transaction for current plugin
+await StorageOperations.updateTransaction('external-id', { category: 'Food' }, currentPlugin);
+
+// Replace all transactions for a specific plugin
+await StorageOperations.replaceTransactionsForPlugin(newTransactions, plugin);
 
 // Plugin operations
 const plugins = await StorageOperations.loadRegisteredPlugins();
@@ -99,7 +102,8 @@ function MyComponent() {
   const {
     loadInitialData,
     updateTransaction,
-    replaceTransactions,
+    loadTransactionsForPlugin,
+    replaceTransactionsForPlugin,
     loadRegisteredPlugins,
     clearAllStorage
   } = useStorageOperations();
@@ -164,17 +168,30 @@ await badgeManager.showTransactionCount(count);
 5. **Testing**: Centralized storage logic is easier to test
 6. **Documentation**: Clear API surface with JSDoc comments
 
+## Per-Plugin Transaction Storage
+
+The storage framework implements per-plugin transaction isolation. Each plugin maintains its own transaction space, ensuring that switching between tabs/plugins shows only relevant transactions.
+
+### Key Features
+
+- **Plugin Isolation**: Transactions are scoped to specific plugins
+- **Automatic Key Generation**: Plugin keys are generated based on `displayName` and `fireflyAccountName`
+- **Tab Switching**: Transactions automatically update when switching between different plugin tabs
+- **Type Safety**: Full TypeScript support for plugin-specific operations
+
 ## Storage Schema
 
 The framework enforces a centralized storage schema:
 
 ```typescript
 interface StorageSchema {
-  transactions: FireflyTransaction[];
+  pluginTransactions: Record<string, FireflyTransaction[]>;
   currentPlugin: PluginStateEvent["plugin"];
   registeredPlugins: RegisteredPlugin[];
 }
 ```
+
+The `pluginTransactions` field stores transactions organized by plugin key, ensuring that each plugin maintains its own transaction space. Plugin keys are generated based on the plugin's display name and Firefly account name.
 
 Adding new storage keys requires updating this schema, ensuring type safety across the application.
 

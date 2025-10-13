@@ -18,18 +18,36 @@ export function useStorageOperations() {
   }, []);
 
   const updateTransaction = useCallback(
-    async (external_id: string, updatedFields: Partial<FireflyTransaction>) => {
+    async (
+      external_id: string,
+      updatedFields: Partial<FireflyTransaction>,
+      plugin: PluginStateEvent["plugin"]
+    ) => {
       return await StorageOperations.updateTransaction(
         external_id,
-        updatedFields
+        updatedFields,
+        plugin
       );
     },
     []
   );
 
-  const replaceTransactions = useCallback(
-    async (transactions: FireflyTransaction[]) => {
-      return await StorageOperations.replaceTransactions(transactions);
+  const loadTransactionsForPlugin = useCallback(
+    async (plugin: PluginStateEvent["plugin"]) => {
+      return await StorageOperations.loadTransactionsForPlugin(plugin);
+    },
+    []
+  );
+
+  const replaceTransactionsForPlugin = useCallback(
+    async (
+      transactions: FireflyTransaction[],
+      plugin: PluginStateEvent["plugin"]
+    ) => {
+      return await StorageOperations.replaceTransactionsForPlugin(
+        transactions,
+        plugin
+      );
     },
     []
   );
@@ -62,7 +80,8 @@ export function useStorageOperations() {
     // Transaction operations
     loadInitialData,
     updateTransaction,
-    replaceTransactions,
+    loadTransactionsForPlugin,
+    replaceTransactionsForPlugin,
 
     // Plugin operations
     loadRegisteredPlugins,

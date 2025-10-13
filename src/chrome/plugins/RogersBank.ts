@@ -27,7 +27,7 @@ export default class RogersBank extends Plugin<RogersApiResponse> {
 
     responseBody.activitySummary.activities.forEach((t) => {
       if (t.activityStatus !== "APPROVED") {
-        console.warn(`Skipping non-approved transaction: ${t.referenceNumber}`);
+        console.warn(`Skipping non-approved transaction: ${t.merchant.name}`);
         return;
       }
 

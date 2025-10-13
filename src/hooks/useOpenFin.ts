@@ -60,6 +60,26 @@ export function useOpenFin() {
     };
   }, []);
 
+  // Effect to load transactions when plugin changes
+  useEffect(() => {
+    const loadTransactionsForCurrentPlugin = async () => {
+      if (currentPlugin) {
+        try {
+          const pluginTransactions =
+            await StorageOperations.loadTransactionsForPlugin(currentPlugin);
+          setTransactions(pluginTransactions);
+        } catch (error) {
+          console.error("Failed to load transactions for plugin:", error);
+        }
+      } else {
+        // No plugin active, clear transactions
+        setTransactions([]);
+      }
+    };
+
+    loadTransactionsForCurrentPlugin();
+  }, [currentPlugin]);
+
   const updateTransaction = async (
     external_id: string,
     updatedFields: Partial<FireflyTransaction>
@@ -75,7 +95,11 @@ export function useOpenFin() {
       );
 
       // Update chrome storage
-      await StorageOperations.updateTransaction(external_id, updatedFields);
+      await StorageOperations.updateTransaction(
+        external_id,
+        updatedFields,
+        currentPlugin
+      );
     } catch (error) {
       console.error("Failed to update transaction:", error);
     }

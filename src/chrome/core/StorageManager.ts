@@ -4,7 +4,7 @@ import type { RegisteredPlugin } from "@/components/plugins/PluginsList";
 
 // Define the storage schema as a centralized type
 export interface StorageSchema {
-  transactions: FireflyTransaction[];
+  pluginTransactions: Record<string, FireflyTransaction[]>;
   currentPlugin: PluginStateEvent["plugin"];
   registeredPlugins: RegisteredPlugin[];
 }
@@ -175,6 +175,14 @@ export const storageManager = StorageManager.getInstance();
  */
 export class StorageOperations {
   /**
+   * Generate a unique key for a plugin based on its properties
+   */
+  private static getPluginKey(plugin: PluginStateEvent["plugin"]): string {
+    if (!plugin) return "unknown";
+    return `${plugin.displayName}_${plugin.fireflyAccountName}`;
+  }
+
+  /**
    * Load initial data for the useOpenFin hook
    */
   static async loadInitialData(): Promise<{
@@ -182,42 +190,76 @@ export class StorageOperations {
     currentPlugin: PluginStateEvent["plugin"];
   }> {
     const data = await storageManager.getMultiple([
-      "transactions",
+      "pluginTransactions",
       "currentPlugin",
     ]);
+
+    const currentPlugin = data.currentPlugin || null;
+    const allPluginTransactions = data.pluginTransactions || {};
+
+    // Get transactions for the current plugin
+    const pluginKey = this.getPluginKey(currentPlugin);
+    const transactions = allPluginTransactions[pluginKey] || [];
+
     return {
-      transactions: data.transactions || [],
-      currentPlugin: data.currentPlugin || null,
+      transactions,
+      currentPlugin,
     };
   }
 
   /**
-   * Update a transaction in the stored transactions array
+   * Load transactions for a specific plugin
+   */
+  static async loadTransactionsForPlugin(
+    plugin: PluginStateEvent["plugin"]
+  ): Promise<FireflyTransaction[]> {
+    const pluginTransactions = await storageManager.get("pluginTransactions");
+    const pluginKey = this.getPluginKey(plugin);
+    return (pluginTransactions || {})[pluginKey] || [];
+  }
+
+  /**
+   * Update a transaction for a specific plugin
    */
   static async updateTransaction(
     external_id: string,
-    updatedFields: Partial<FireflyTransaction>
+    updatedFields: Partial<FireflyTransaction>,
+    plugin: PluginStateEvent["plugin"]
   ): Promise<boolean> {
-    return await storageManager.updateArray(
-      "transactions",
-      (transactions) => {
-        return transactions.map((transaction) =>
-          transaction.external_id === external_id
-            ? { ...transaction, ...updatedFields }
-            : transaction
-        );
-      },
-      []
+    const pluginKey = this.getPluginKey(plugin);
+    const allPluginTransactions =
+      (await storageManager.get("pluginTransactions")) || {};
+
+    const pluginTransactions = allPluginTransactions[pluginKey] || [];
+    const updatedTransactions = pluginTransactions.map((transaction) =>
+      transaction.external_id === external_id
+        ? { ...transaction, ...updatedFields }
+        : transaction
+    );
+
+    allPluginTransactions[pluginKey] = updatedTransactions;
+    return await storageManager.set(
+      "pluginTransactions",
+      allPluginTransactions
     );
   }
 
   /**
-   * Replace all transactions (used when new data comes from background)
+   * Replace all transactions for a specific plugin (used when new data comes from background)
    */
-  static async replaceTransactions(
-    newTransactions: FireflyTransaction[]
+  static async replaceTransactionsForPlugin(
+    newTransactions: FireflyTransaction[],
+    plugin: PluginStateEvent["plugin"]
   ): Promise<boolean> {
-    return await storageManager.set("transactions", newTransactions);
+    const pluginKey = this.getPluginKey(plugin);
+    const allPluginTransactions =
+      (await storageManager.get("pluginTransactions")) || {};
+
+    allPluginTransactions[pluginKey] = newTransactions;
+    return await storageManager.set(
+      "pluginTransactions",
+      allPluginTransactions
+    );
   }
 
   /**
