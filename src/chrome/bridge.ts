@@ -10,7 +10,8 @@ window.addEventListener("message", (event: MessageEvent) => {
   ) {
     const forwardedMessage = {
       type: event.data.type,
-      url: event.data.url,
+      baseUrl: event.data.baseUrl,
+      apiUrl: event.data.apiUrl,
       body: event.data.body,
       source: "bridge",
     };

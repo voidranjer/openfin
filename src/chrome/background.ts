@@ -127,36 +127,34 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener(async (message: unknown) => {
   // Check if message instance of RestRequestEvent
-  if (isRestRequestEvent(message) && message.source === "bridge") {
-    const output = pluginManager.parseApiResponse(message.url, message.body);
+  if (!(isRestRequestEvent(message) && message.source === "bridge")) return;
+  console.log(message);
 
-    if (output && output.length > 0) {
-      // Find which plugin this URL belongs to
-      const plugin = pluginManager.findPluginForApiUrl(message.url);
+  const plugin = pluginManager.findMatchingPlugin(message.baseUrl);
+  if (plugin === undefined) return;
 
-      if (plugin) {
-        const pluginData = {
-          displayName: plugin.displayName,
-          iconUrl: plugin.iconUrl,
-          fireflyAccountName: plugin.fireflyAccountName,
-          baseUrlPattern: plugin.getBaseUrlPattern().source,
-          apiUrlPattern: plugin.getApiUrlPattern().source,
-        };
+  const pluginData = {
+    displayName: plugin.displayName,
+    iconUrl: plugin.iconUrl,
+    fireflyAccountName: plugin.fireflyAccountName,
+    baseUrlPattern: plugin.getBaseUrlPattern().source,
+    apiUrlPattern: plugin.getApiUrlPattern().source,
+  };
 
-        // Store transactions for the specific plugin
-        await StorageOperations.replaceTransactionsForPlugin(
-          output,
-          pluginData
-        );
+  const transactions = plugin.handleApiRequest(
+    message.apiUrl,
+    JSON.parse(message.body)
+  );
+  if (transactions === undefined) return;
 
-        // Show notification badge on popup icon
-        await badgeManager.showTransactionCount(output.length);
+  await StorageOperations.replaceTransactionsForPlugin(
+    transactions,
+    pluginData
+  );
 
-        // Notify UI to refresh from storage
-        notifyStorageUpdated();
+  // Notify UI to refresh from storage
+  notifyStorageUpdated();
 
-        // fireflyClient.postTransactions(output);
-      }
-    }
-  }
+  // Show notification badge on popup icon
+  await badgeManager.showTransactionCount(transactions.length);
 });

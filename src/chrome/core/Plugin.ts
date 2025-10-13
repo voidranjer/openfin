@@ -16,4 +16,15 @@ export default abstract class Plugin<ApiResponse = unknown> {
   abstract getApiUrlPattern(): RegExp;
 
   abstract parseResponse(responseBody: ApiResponse): FireflyTransaction[];
+
+  handleApiRequest(
+    apiUrl: string,
+    responseBody: ApiResponse
+  ): FireflyTransaction[] | undefined {
+    const apiPattern = this.getApiUrlPattern();
+    if (apiPattern.test(apiUrl)) {
+      return this.parseResponse(responseBody);
+    }
+    return undefined;
+  }
 }

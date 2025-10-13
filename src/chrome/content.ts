@@ -17,7 +17,8 @@ window.fetch = function (...args: Parameters<typeof fetch>) {
 
         const messageData = {
           type: "openfin-rest-request",
-          url: fullUrl,
+          baseUrl: window.location.href,
+          apiUrl: fullUrl,
           body: body,
           source: "content",
         };
@@ -55,7 +56,8 @@ XMLHttpRequest.prototype.send = function (
 
     const messageData = {
       type: "openfin-rest-request",
-      url: fullUrl,
+      baseUrl: window.location.href,
+      apiUrl: fullUrl,
       body: this.response as string,
       source: "content",
     };

@@ -1,7 +1,8 @@
 export type RestRequestEvent = {
   type: "openfin-rest-request";
   source: "content" | "background" | "bridge";
-  url: string;
+  baseUrl: string;
+  apiUrl: string;
   body: string;
 };
 
@@ -52,7 +53,8 @@ export function isRestRequestEvent(
     typeof message === "object" &&
     "type" in message &&
     (message as Record<string, unknown>).type === "openfin-rest-request" &&
-    "url" in message &&
+    "baseUrl" in message &&
+    "apiUrl" in message &&
     "body" in message &&
     "source" in message
   );
