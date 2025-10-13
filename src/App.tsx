@@ -76,18 +76,22 @@ export default function App() {
   }, []);
 
   return (
-    <div className="py-5 px-4">
+    <div className="py-5 px-4 max-h-screen flex flex-col overflow-hidden">
       <h1 className="text-3xl font-bold mb-3 text-center">OpenFin</h1>
       {transactions.length === 0 ? (
-        <div className="text-center text-gray-500 py-8">
-          <p>No transactions captured yet.</p>
-          <p className="text-sm mt-2">
-            Visit a supported financial website to see transaction data appear
-            here automatically.
-          </p>
+        <div className="text-center text-gray-500 py-8 flex-grow flex items-center justify-center">
+          <div>
+            <p>No transactions captured yet.</p>
+            <p className="text-sm mt-2">
+              Visit a supported financial website to see transaction data appear
+              here automatically.
+            </p>
+          </div>
         </div>
       ) : (
-        <DataTable columns={columns} data={transactions} />
+        <div className="overflow-scroll flex-grow">
+          <DataTable columns={columns} data={transactions} />
+        </div>
       )}
     </div>
   );

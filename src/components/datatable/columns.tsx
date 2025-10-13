@@ -15,10 +15,26 @@ export const columns: ColumnDef<DataTableTransaction>[] = [
   {
     accessorKey: "description",
     header: () => <div className="text-center">Description</div>,
+    cell: ({ row }) => {
+      const description = row.getValue("description") as string;
+      return (
+        <div className="max-w-[200px] truncate" title={description}>
+          {description}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "category_name",
     header: () => <div className="text-center">Category</div>,
+    cell: ({ row }) => {
+      const category = row.getValue("category_name") as string;
+      return (
+        <div className="max-w-[100px] truncate" title={category}>
+          {category}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "date",

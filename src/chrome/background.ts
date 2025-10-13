@@ -6,6 +6,8 @@ import {
 } from "./core/types/requestBodyPipeline";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+
 const pluginManager = new PluginManager();
 pluginManager.register(
   new ScotiabankScenePlus("Scene Plus VISA") // TODO: change to actual name
