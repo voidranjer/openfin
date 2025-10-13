@@ -3,10 +3,90 @@
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
 import { type ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
-export const columns: ColumnDef<FireflyTransaction>[] = [
+interface EditableCategoryProps {
+  transaction: FireflyTransaction;
+  updateTransaction?: (
+    external_id: string,
+    updatedFields: Partial<FireflyTransaction>
+  ) => Promise<void>;
+}
+
+function EditableCategory({
+  transaction,
+  updateTransaction,
+}: EditableCategoryProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(transaction.category_name);
+
+  const handleSave = async () => {
+    if (updateTransaction && editValue !== transaction.category_name) {
+      await updateTransaction(transaction.external_id, {
+        category_name: editValue,
+      });
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(transaction.category_name);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-1">
+        <Input
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          className="h-8 text-xs"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSave();
+            if (e.key === "Escape") handleCancel();
+          }}
+          autoFocus
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSave}
+          className="h-6 w-6 p-0"
+        >
+          <Check className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleCancel}
+          className="h-6 w-6 p-0"
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="max-w-[100px] truncate cursor-pointer hover:bg-gray-100 rounded px-1"
+      title={`${transaction.category_name} (click to edit)`}
+      onClick={() => setIsEditing(true)}
+    >
+      {transaction.category_name}
+    </div>
+  );
+}
+
+export const createColumns = (
+  updateTransaction?: (
+    external_id: string,
+    updatedFields: Partial<FireflyTransaction>
+  ) => Promise<void>
+): ColumnDef<FireflyTransaction>[] => [
   {
     id: "expander",
     header: "",
@@ -43,11 +123,11 @@ export const columns: ColumnDef<FireflyTransaction>[] = [
     accessorKey: "category_name",
     header: () => <div className="text-center">Category</div>,
     cell: ({ row }) => {
-      const category = row.getValue("category_name") as string;
       return (
-        <div className="max-w-[100px] truncate" title={category}>
-          {category}
-        </div>
+        <EditableCategory
+          transaction={row.original}
+          updateTransaction={updateTransaction}
+        />
       );
     },
   },
@@ -95,3 +175,6 @@ export const columns: ColumnDef<FireflyTransaction>[] = [
     },
   },
 ];
+
+// Backward compatible export
+export const columns = createColumns();

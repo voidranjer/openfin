@@ -77,8 +77,42 @@ export function useOpenFin() {
     };
   }, []);
 
+  const updateTransaction = async (
+    external_id: string,
+    updatedFields: Partial<FireflyTransaction>
+  ) => {
+    try {
+      // Update the local state
+      setTransactions((prev) =>
+        prev.map((transaction) =>
+          transaction.external_id === external_id
+            ? { ...transaction, ...updatedFields }
+            : transaction
+        )
+      );
+
+      // Update chrome storage
+      if (chrome?.storage?.local) {
+        const result = await chrome.storage.local.get(["transactions"]);
+        const storedTransactions: FireflyTransaction[] =
+          result.transactions || [];
+
+        const updatedTransactions = storedTransactions.map((transaction) =>
+          transaction.external_id === external_id
+            ? { ...transaction, ...updatedFields }
+            : transaction
+        );
+
+        await chrome.storage.local.set({ transactions: updatedTransactions });
+      }
+    } catch (error) {
+      console.error("Failed to update transaction:", error);
+    }
+  };
+
   return {
     transactions,
     currentPlugin,
+    updateTransaction,
   };
 }
