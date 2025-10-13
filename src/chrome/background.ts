@@ -128,7 +128,6 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 chrome.runtime.onMessage.addListener(async (message: unknown) => {
   // Check if message instance of RestRequestEvent
   if (!(isRestRequestEvent(message) && message.source === "bridge")) return;
-  console.log(message);
 
   const plugin = pluginManager.findMatchingPlugin(message.baseUrl);
   if (plugin === undefined) return;

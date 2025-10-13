@@ -185,7 +185,7 @@ export const createColumns = (
     header: () => <div className="text-center">Amount</div>,
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("amount"));
-      const type = row.getValue("type") as "deposit" | "withdrawal";
+      const type = row.original.type as "deposit" | "withdrawal";
       const isDeposit = type === "deposit";
 
       const formatted = new Intl.NumberFormat("en-US", {
