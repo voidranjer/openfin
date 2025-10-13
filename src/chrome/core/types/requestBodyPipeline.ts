@@ -5,6 +5,19 @@ export type RestRequestEvent = {
   body: string;
 };
 
+export type PluginStateEvent = {
+  type: "PLUGIN_STATE_UPDATE";
+  source: "background";
+  plugin: {
+    displayName: string;
+    iconUrl: string;
+    fireflyAccountName: string;
+    baseUrlPattern: string;
+    apiUrlPattern: string;
+  } | null;
+  url: string;
+};
+
 /**
  * Type guard function to check if a message is a RestRequestEvent.
  *
@@ -36,6 +49,20 @@ export function isRestRequestEvent(
     (message as Record<string, unknown>).type === "openfin-rest-request" &&
     "url" in message &&
     "body" in message &&
+    "source" in message
+  );
+}
+
+export function isPluginStateEvent(
+  message: unknown
+): message is PluginStateEvent {
+  return (
+    message !== null &&
+    typeof message === "object" &&
+    "type" in message &&
+    (message as Record<string, unknown>).type === "PLUGIN_STATE_UPDATE" &&
+    "url" in message &&
+    "plugin" in message &&
     "source" in message
   );
 }

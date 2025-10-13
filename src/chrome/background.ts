@@ -3,6 +3,7 @@ import PluginManager from "./core/PluginManager";
 import {
   isRestRequestEvent,
   type RestRequestEvent,
+  type PluginStateEvent,
 } from "./core/types/requestBodyPipeline";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 
@@ -25,49 +26,80 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 
   const plugin = pluginManager.findMatchingPlugin(tab.url);
-  if (plugin) {
-    try {
-      // First set the options for this specific tab
-      await chrome.sidePanel.setOptions({
-        tabId: tab.id,
-        path: "dist/index.html",
-        enabled: true,
-      });
 
-      // Then open the side panel
-      await chrome.sidePanel.open({ tabId: tab.id });
-    } catch (error) {
-      console.error("Failed to open side panel:", error);
-    }
+  try {
+    // Open the side panel
+    await chrome.sidePanel.open({ tabId: tab.id });
+
+    // Send current plugin state to the side panel
+    const pluginStateMessage: PluginStateEvent = {
+      type: "PLUGIN_STATE_UPDATE",
+      source: "background",
+      plugin: plugin
+        ? {
+            displayName: plugin.displayName,
+            iconUrl: plugin.iconUrl,
+            fireflyAccountName: plugin.fireflyAccountName,
+            baseUrlPattern: plugin.getBaseUrlPattern().source,
+            apiUrlPattern: plugin.getApiUrlPattern().source,
+          }
+        : null,
+      url: tab.url,
+    };
+
+    // Send the message after a brief delay to ensure the side panel is ready
+    setTimeout(() => {
+      try {
+        chrome.runtime.sendMessage(pluginStateMessage);
+      } catch {
+        console.debug("No message receiver available for initial plugin state");
+      }
+    }, 100);
+  } catch (error) {
+    console.error("Failed to open side panel:", error);
   }
 });
 
-chrome.tabs.onUpdated.addListener(async (tabId, _info, tab) => {
+// Helper function to send plugin state message
+function sendPluginStateMessage(tab: chrome.tabs.Tab) {
   if (!tab.url) return;
 
   const plugin = pluginManager.findMatchingPlugin(tab.url);
 
-  if (plugin) {
-    chrome.action.enable(tabId);
-    await chrome.sidePanel.setOptions({
-      tabId,
-      path: "dist/index.html",
-      enabled: true,
-    });
-    return;
-  }
+  // Send message about current plugin state to App.tsx
+  const pluginStateMessage: PluginStateEvent = {
+    type: "PLUGIN_STATE_UPDATE",
+    source: "background",
+    plugin: plugin
+      ? {
+          displayName: plugin.displayName,
+          iconUrl: plugin.iconUrl,
+          fireflyAccountName: plugin.fireflyAccountName,
+          baseUrlPattern: plugin.getBaseUrlPattern().source,
+          apiUrlPattern: plugin.getApiUrlPattern().source,
+        }
+      : null,
+    url: tab.url,
+  };
 
-  // No plugin found - disable action and close side panel if open
-  chrome.action.disable(tabId);
-
-  // Disable the side panel for this tab (this should close it if open)
   try {
-    await chrome.sidePanel.setOptions({
-      tabId,
-      enabled: false,
-    });
+    chrome.runtime.sendMessage(pluginStateMessage);
   } catch {
-    // Ignore errors when disabling side panel
+    // Side panel might not be open, that's okay
+    console.debug("No message receiver available for plugin state update");
+  }
+}
+
+chrome.tabs.onUpdated.addListener(async (_tabId, _info, tab) => {
+  sendPluginStateMessage(tab);
+});
+
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    sendPluginStateMessage(tab);
+  } catch (error) {
+    console.error("Failed to get tab info on activation:", error);
   }
 });
 
