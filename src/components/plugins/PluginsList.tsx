@@ -63,7 +63,7 @@ export default function PluginsList() {
           </div>
           <div>
             <p className="text-sm text-amber-800 font-medium">
-              You&apos;re currently on a non-supported page
+              You&apos;re currently on an unsupported page
             </p>
             <p className="text-xs text-amber-700 mt-1">
               Navigate to one of the supported financial websites below to start
