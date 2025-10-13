@@ -131,3 +131,15 @@
     background-color: transparent;
   }
 }
+
+@keyframes flash {
+  0% {
+    background-color: #dbeafe;
+  }
+  50% {
+    background-color: #bfdbfe;
+  }
+  100% {
+    background-color: transparent;
+  }
+}

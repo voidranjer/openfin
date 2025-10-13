@@ -231,11 +231,22 @@ export class StorageOperations {
       (await storageManager.get("pluginTransactions")) || {};
 
     const pluginTransactions = allPluginTransactions[pluginKey] || [];
-    const updatedTransactions = pluginTransactions.map((transaction) =>
-      transaction.external_id === external_id
-        ? { ...transaction, ...updatedFields }
-        : transaction
-    );
+    const updatedTransactions = pluginTransactions.map((transaction) => {
+      if (transaction.external_id === external_id) {
+        const updated = { ...transaction, ...updatedFields };
+
+        // If this is the first time the category is being edited, preserve the original
+        if (
+          updatedFields.category_name &&
+          !transaction.original_category_name
+        ) {
+          updated.original_category_name = transaction.category_name;
+        }
+
+        return updated;
+      }
+      return transaction;
+    });
 
     allPluginTransactions[pluginKey] = updatedTransactions;
     return await storageManager.set(
@@ -255,7 +266,31 @@ export class StorageOperations {
     const allPluginTransactions =
       (await storageManager.get("pluginTransactions")) || {};
 
-    allPluginTransactions[pluginKey] = newTransactions;
+    // Get existing transactions to preserve original category names
+    const existingTransactions = allPluginTransactions[pluginKey] || [];
+
+    // Merge new transactions with existing ones, preserving original category names for edited items
+    const mergedTransactions = newTransactions.map((newTx) => {
+      const existingTx = existingTransactions.find(
+        (existing) => existing.external_id === newTx.external_id
+      );
+
+      if (existingTx && existingTx.original_category_name) {
+        // Transaction exists and has been edited - preserve the original category name
+        return {
+          ...newTx,
+          original_category_name: existingTx.original_category_name,
+        };
+      } else {
+        // New transaction or unedited transaction - set original category name
+        return {
+          ...newTx,
+          original_category_name: newTx.category_name,
+        };
+      }
+    });
+
+    allPluginTransactions[pluginKey] = mergedTransactions;
     return await storageManager.set(
       "pluginTransactions",
       allPluginTransactions

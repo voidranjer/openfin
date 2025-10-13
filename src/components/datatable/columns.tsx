@@ -3,7 +3,7 @@
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
 import { type ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, Check, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -14,14 +14,21 @@ interface EditableCategoryProps {
     external_id: string,
     updatedFields: Partial<FireflyTransaction>
   ) => Promise<void>;
+  resetTransactionCategory?: (external_id: string) => Promise<void>;
 }
 
 function EditableCategory({
   transaction,
   updateTransaction,
+  resetTransactionCategory,
 }: EditableCategoryProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(transaction.category_name);
+
+  // Check if the category has been edited from its original value
+  const isEdited =
+    transaction.original_category_name &&
+    transaction.category_name !== transaction.original_category_name;
 
   const handleSave = async () => {
     if (updateTransaction && editValue !== transaction.category_name) {
@@ -48,6 +55,7 @@ function EditableCategory({
             if (e.key === "Enter") handleSave();
             if (e.key === "Escape") handleCancel();
           }}
+          onFocus={(e) => e.target.select()}
           autoFocus
         />
         <Button
@@ -70,13 +78,36 @@ function EditableCategory({
     );
   }
 
+  const title = isEdited
+    ? `${transaction.category_name} (edited from: ${transaction.original_category_name}) - click to edit`
+    : `${transaction.category_name} (click to edit)`;
+
   return (
-    <div
-      className="max-w-[100px] truncate cursor-pointer hover:bg-gray-100 rounded px-1"
-      title={`${transaction.category_name} (click to edit)`}
-      onClick={() => setIsEditing(true)}
-    >
-      {transaction.category_name}
+    <div className="flex items-center gap-1">
+      <div
+        className={cn(
+          "max-w-[100px] truncate cursor-pointer hover:bg-gray-100 rounded px-1",
+          isEdited && "text-blue-600 italic font-medium"
+        )}
+        title={title}
+        onClick={() => setIsEditing(true)}
+      >
+        {transaction.category_name}
+      </div>
+      {isEdited && resetTransactionCategory && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            resetTransactionCategory(transaction.external_id);
+          }}
+          className="h-4 w-4 p-0 text-gray-500 hover:text-gray-700"
+          title={`Reset to original: ${transaction.original_category_name}`}
+        >
+          <RotateCcw className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -85,7 +116,8 @@ export const createColumns = (
   updateTransaction?: (
     external_id: string,
     updatedFields: Partial<FireflyTransaction>
-  ) => Promise<void>
+  ) => Promise<void>,
+  resetTransactionCategory?: (external_id: string) => Promise<void>
 ): ColumnDef<FireflyTransaction>[] => [
   {
     id: "expander",
@@ -127,6 +159,7 @@ export const createColumns = (
         <EditableCategory
           transaction={row.original}
           updateTransaction={updateTransaction}
+          resetTransactionCategory={resetTransactionCategory}
         />
       );
     },

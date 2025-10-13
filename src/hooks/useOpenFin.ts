@@ -19,7 +19,13 @@ export function useOpenFin() {
       try {
         const data = await StorageOperations.loadInitialData();
 
-        setTransactions(data.transactions);
+        // Ensure all transactions have original_category_name set
+        const transactionsWithOriginal = data.transactions.map((tx) => ({
+          ...tx,
+          original_category_name: tx.original_category_name || tx.category_name,
+        }));
+
+        setTransactions(transactionsWithOriginal);
         setCurrentPlugin(data.currentPlugin);
 
         // Clear the badge when action icon clicked
@@ -39,8 +45,15 @@ export function useOpenFin() {
             message.body
           );
 
+          // Ensure all transactions have original_category_name set
+          const transactionsWithOriginal = parsedTransactions.map((tx) => ({
+            ...tx,
+            original_category_name:
+              tx.original_category_name || tx.category_name,
+          }));
+
           // Replace all old content with new transactions
-          setTransactions(parsedTransactions);
+          setTransactions(transactionsWithOriginal);
         } catch (error) {
           console.error("Failed to parse transaction data:", error);
         }
@@ -67,7 +80,15 @@ export function useOpenFin() {
         try {
           const pluginTransactions =
             await StorageOperations.loadTransactionsForPlugin(currentPlugin);
-          setTransactions(pluginTransactions);
+
+          // Ensure all transactions have original_category_name set
+          const transactionsWithOriginal = pluginTransactions.map((tx) => ({
+            ...tx,
+            original_category_name:
+              tx.original_category_name || tx.category_name,
+          }));
+
+          setTransactions(transactionsWithOriginal);
         } catch (error) {
           console.error("Failed to load transactions for plugin:", error);
         }
@@ -87,11 +108,22 @@ export function useOpenFin() {
     try {
       // Update the local state
       setTransactions((prev) =>
-        prev.map((transaction) =>
-          transaction.external_id === external_id
-            ? { ...transaction, ...updatedFields }
-            : transaction
-        )
+        prev.map((transaction) => {
+          if (transaction.external_id === external_id) {
+            const updated = { ...transaction, ...updatedFields };
+
+            // If this is the first time the category is being edited, preserve the original
+            if (
+              updatedFields.category_name &&
+              !transaction.original_category_name
+            ) {
+              updated.original_category_name = transaction.category_name;
+            }
+
+            return updated;
+          }
+          return transaction;
+        })
       );
 
       // Update chrome storage
@@ -105,9 +137,25 @@ export function useOpenFin() {
     }
   };
 
+  const resetTransactionCategory = async (external_id: string) => {
+    try {
+      const transaction = transactions.find(
+        (tx) => tx.external_id === external_id
+      );
+      if (transaction && transaction.original_category_name) {
+        await updateTransaction(external_id, {
+          category_name: transaction.original_category_name,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to reset transaction category:", error);
+    }
+  };
+
   return {
     transactions,
     currentPlugin,
     updateTransaction,
+    resetTransactionCategory,
   };
 }

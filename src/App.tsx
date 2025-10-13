@@ -4,7 +4,7 @@ import Dashboard from "@/components/Dashboard";
 import PluginsList from "@/components/plugins";
 
 export default function App() {
-  const { transactions, currentPlugin, updateTransaction } = useOpenFin();
+  const { currentPlugin } = useOpenFin();
 
   // If no plugin is detected for current page, show plugins list
   if (!currentPlugin) {
@@ -12,11 +12,5 @@ export default function App() {
   }
 
   // Show plugin details and transactions for supported pages
-  return (
-    <Dashboard
-      plugin={currentPlugin}
-      transactions={transactions}
-      updateTransaction={updateTransaction}
-    />
-  );
+  return <Dashboard />;
 }
