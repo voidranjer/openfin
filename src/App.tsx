@@ -11,6 +11,7 @@ import {
   type RestRequestEvent,
 } from "@/chrome/core/types/requestBodyPipeline";
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
+import PluginsList from "@/components/plugins";
 
 export default function App() {
   const [transactions, setTransactions] = useState<DataTableTransaction[]>([]);
@@ -74,6 +75,8 @@ export default function App() {
       chrome.runtime.onMessage.removeListener(handleMessage);
     };
   }, []);
+
+  return <PluginsList />;
 
   return (
     <div className="py-5 px-4 max-h-screen flex flex-col overflow-hidden">

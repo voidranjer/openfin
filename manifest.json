@@ -27,5 +27,5 @@
       "run_at": "document_start"
     }
   ],
-  "permissions": ["storage", "sidePanel"]
+  "permissions": ["storage", "sidePanel", "tabs"]
 }
