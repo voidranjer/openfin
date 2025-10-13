@@ -16,7 +16,7 @@ export function useOpenFin() {
     useState<PluginStateEvent["plugin"]>(null);
 
   useEffect(() => {
-    // Load stored transactions when popup opens
+    // Load stored transactions when action icon clicked
     const loadStoredTransactions = async () => {
       try {
         // Check if chrome APIs are available
@@ -35,7 +35,7 @@ export function useOpenFin() {
           setTransactions(dataTableTransactions);
         }
 
-        // Clear the badge when popup is opened
+        // Clear the badge when action icon clicked
         if (chrome?.action?.setBadgeText) {
           chrome.action.setBadgeText({ text: "" });
         }

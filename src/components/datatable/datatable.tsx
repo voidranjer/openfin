@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   type ColumnDef,
   flexRender,
@@ -17,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -27,6 +29,8 @@ export default function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  const [isAnimating, setIsAnimating] = useState(false);
+
   const table = useReactTable({
     data,
     columns,
@@ -34,6 +38,14 @@ export default function DataTable<TData, TValue>({
     // getPaginationRowModel: getPaginationRowModel(),
     // initialState: { pagination: { pageSize: 50 } },
   });
+
+  useEffect(() => {
+    if (data.length > 0) {
+      setIsAnimating(true);
+      const timer = setTimeout(() => setIsAnimating(false), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [data]);
 
   return (
     <div>
@@ -59,10 +71,18 @@ export default function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map((row, index) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className={cn(
+                    isAnimating && "animate-[wipeDown_0.6s_ease-out_both]"
+                  )}
+                  style={
+                    isAnimating
+                      ? { animationDelay: `${index * 50}ms` }
+                      : undefined
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
