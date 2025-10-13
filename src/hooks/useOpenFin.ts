@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  isRestRequestEvent,
-  isPluginStateEvent,
+  isStorageUpdateEvent,
   type PluginStateEvent,
 } from "@/chrome/core/types/requestBodyPipeline";
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
@@ -13,55 +12,36 @@ export function useOpenFin() {
   const [currentPlugin, setCurrentPlugin] =
     useState<PluginStateEvent["plugin"]>(null);
 
+  // Load data from storage
+  const loadFromStorage = async () => {
+    try {
+      const data = await StorageOperations.loadInitialData();
+
+      // Ensure all transactions have original_category_name set
+      const transactionsWithOriginal = data.transactions.map((tx) => ({
+        ...tx,
+        original_category_name: tx.original_category_name || tx.category_name,
+      }));
+
+      setTransactions(transactionsWithOriginal);
+      setCurrentPlugin(data.currentPlugin);
+
+      // Clear the badge when data is loaded
+      await badgeManager.clearBadge();
+    } catch (error) {
+      console.error("Failed to load stored data:", error);
+    }
+  };
+
   useEffect(() => {
     // Load stored data when component mounts
-    const loadStoredData = async () => {
-      try {
-        const data = await StorageOperations.loadInitialData();
+    loadFromStorage();
 
-        // Ensure all transactions have original_category_name set
-        const transactionsWithOriginal = data.transactions.map((tx) => ({
-          ...tx,
-          original_category_name: tx.original_category_name || tx.category_name,
-        }));
-
-        setTransactions(transactionsWithOriginal);
-        setCurrentPlugin(data.currentPlugin);
-
-        // Clear the badge when action icon clicked
-        await badgeManager.clearBadge();
-      } catch (error) {
-        console.error("Failed to load stored data:", error);
-      }
-    };
-
-    loadStoredData();
-
+    // Listen for storage update notifications
     function handleMessage(message: unknown) {
-      // Handle transaction messages
-      if (isRestRequestEvent(message) && message.source === "background") {
-        try {
-          const parsedTransactions: FireflyTransaction[] = JSON.parse(
-            message.body
-          );
-
-          // Ensure all transactions have original_category_name set
-          const transactionsWithOriginal = parsedTransactions.map((tx) => ({
-            ...tx,
-            original_category_name:
-              tx.original_category_name || tx.category_name,
-          }));
-
-          // Replace all old content with new transactions
-          setTransactions(transactionsWithOriginal);
-        } catch (error) {
-          console.error("Failed to parse transaction data:", error);
-        }
-      }
-
-      // Handle plugin state messages
-      if (isPluginStateEvent(message) && message.source === "background") {
-        setCurrentPlugin(message.plugin);
+      if (isStorageUpdateEvent(message)) {
+        // Reload data from storage when notified
+        loadFromStorage();
       }
     }
 

@@ -16,8 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { useDataTableAnimations } from "@/hooks/useDataTableAnimations";
 import { createColumns } from "./columns";
 import EmptyState from "@/components/EmptyState";
 
@@ -35,7 +33,6 @@ export default function DataTable({
   updateTransaction,
   resetTransactionCategory,
 }: DataTableProps) {
-  const { rowAnimations } = useDataTableAnimations({ transactions });
   const columns = createColumns(updateTransaction, resetTransactionCategory);
 
   const table = useReactTable({
@@ -74,21 +71,9 @@ export default function DataTable({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
-                const transaction = row.original as FireflyTransaction;
-                const animation = rowAnimations[transaction.external_id];
-
                 return (
                   <React.Fragment key={row.id}>
-                    <TableRow
-                      key={`${row.id}-${animation?.animationKey || 0}`}
-                      data-state={row.getIsSelected() && "selected"}
-                      className={cn(
-                        animation?.isNew &&
-                          "animate-[wipeLeft_0.6s_ease-out_both]",
-                        animation?.isUpdated &&
-                          "animate-[flash_0.8s_ease-in-out] bg-blue-50"
-                      )}
-                    >
+                    <TableRow data-state={row.getIsSelected() && "selected"}>
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
                           {flexRender(

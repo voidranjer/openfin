@@ -18,6 +18,11 @@ export type PluginStateEvent = {
   url: string;
 };
 
+export type StorageUpdateEvent = {
+  type: "STORAGE_UPDATED";
+  source: "background";
+};
+
 /**
  * Type guard function to check if a message is a RestRequestEvent.
  *
@@ -63,6 +68,18 @@ export function isPluginStateEvent(
     (message as Record<string, unknown>).type === "PLUGIN_STATE_UPDATE" &&
     "url" in message &&
     "plugin" in message &&
+    "source" in message
+  );
+}
+
+export function isStorageUpdateEvent(
+  message: unknown
+): message is StorageUpdateEvent {
+  return (
+    message !== null &&
+    typeof message === "object" &&
+    "type" in message &&
+    (message as Record<string, unknown>).type === "STORAGE_UPDATED" &&
     "source" in message
   );
 }
