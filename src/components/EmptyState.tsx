@@ -1,6 +1,6 @@
 export default function EmptyState() {
   return (
-    <div className="text-center text-gray-500 py-8 flex-grow flex items-center justify-center">
+    <div className="flex-grow flex items-center justify-center text-center text-gray-500">
       <div>
         <p>No transactions captured yet.</p>
         <p className="text-sm mt-2">

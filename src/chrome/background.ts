@@ -32,7 +32,7 @@ pluginManager.register(
   new ScotiabankScenePlus("Scene Plus VISA") // TODO: change to actual name
 );
 pluginManager.register(
-  new RogersBank("Rogers Red") // TODO: change to actual name
+  new RogersBank("Rogers Red Mastercard") // TODO: change to actual name
 );
 pluginManager.register(
   new ScotiabankChequing("Chequing") // TODO: change to actual name
