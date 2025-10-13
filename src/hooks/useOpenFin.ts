@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   isStorageUpdateEvent,
+  isTransactionStatusUpdateEvent,
   type PluginStateEvent,
 } from "@/chrome/core/types/requestBodyPipeline";
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
@@ -37,11 +38,20 @@ export function useOpenFin() {
     // Load stored data when component mounts
     loadFromStorage();
 
-    // Listen for storage update notifications
+    // Listen for storage update notifications and transaction status updates
     function handleMessage(message: unknown) {
       if (isStorageUpdateEvent(message)) {
         // Reload data from storage when notified
         loadFromStorage();
+      } else if (isTransactionStatusUpdateEvent(message)) {
+        // Update transaction status in real-time
+        setTransactions((prev) =>
+          prev.map((transaction) =>
+            transaction.external_id === message.external_id
+              ? { ...transaction, status: message.status }
+              : transaction
+          )
+        );
       }
     }
 

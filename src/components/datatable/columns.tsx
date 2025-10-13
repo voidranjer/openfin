@@ -3,10 +3,99 @@
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
 import { type ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, Check, X, RotateCcw } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Check,
+  X,
+  RotateCcw,
+  Clock,
+  Search,
+  Upload,
+  CheckCircle,
+  XCircle,
+  Copy,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+
+interface StatusIndicatorProps {
+  status?:
+    | "pending"
+    | "checking"
+    | "posting"
+    | "success"
+    | "error"
+    | "duplicate";
+}
+
+function StatusIndicator({ status }: StatusIndicatorProps) {
+  if (!status) {
+    return (
+      <div className="flex items-center justify-center">
+        <Clock className="h-4 w-4 text-gray-400" />
+      </div>
+    );
+  }
+
+  switch (status) {
+    case "pending":
+      return (
+        <div className="flex items-center justify-center" title="Pending">
+          <Clock className="h-4 w-4 text-gray-500" />
+        </div>
+      );
+    case "checking":
+      return (
+        <div
+          className="flex items-center justify-center"
+          title="Checking for duplicates"
+        >
+          <Search className="h-4 w-4 text-blue-500 animate-pulse" />
+        </div>
+      );
+    case "posting":
+      return (
+        <div
+          className="flex items-center justify-center"
+          title="Posting to Firefly"
+        >
+          <Upload className="h-4 w-4 text-blue-600 animate-pulse" />
+        </div>
+      );
+    case "success":
+      return (
+        <div
+          className="flex items-center justify-center"
+          title="Posted successfully"
+        >
+          <CheckCircle className="h-4 w-4 text-green-600" />
+        </div>
+      );
+    case "error":
+      return (
+        <div className="flex items-center justify-center" title="Error posting">
+          <XCircle className="h-4 w-4 text-red-600" />
+        </div>
+      );
+    case "duplicate":
+      return (
+        <div
+          className="flex items-center justify-center"
+          title="Duplicate transaction"
+        >
+          <Copy className="h-4 w-4 text-orange-500" />
+        </div>
+      );
+    default:
+      return (
+        <div className="flex items-center justify-center">
+          <Clock className="h-4 w-4 text-gray-400" />
+        </div>
+      );
+  }
+}
 
 interface EditableCategoryProps {
   transaction: FireflyTransaction;
@@ -137,6 +226,13 @@ export const createColumns = (
           )}
         </Button>
       );
+    },
+  },
+  {
+    accessorKey: "status",
+    header: () => <div className="text-center">Status</div>,
+    cell: ({ row }) => {
+      return <StatusIndicator status={row.original.status} />;
     },
   },
   {

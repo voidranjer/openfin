@@ -24,6 +24,19 @@ export type StorageUpdateEvent = {
   source: "background";
 };
 
+export type TransactionStatusUpdateEvent = {
+  type: "TRANSACTION_STATUS_UPDATE";
+  source: "firefly-client";
+  external_id: string;
+  status:
+    | "pending"
+    | "checking"
+    | "posting"
+    | "success"
+    | "error"
+    | "duplicate";
+};
+
 /**
  * Type guard function to check if a message is a RestRequestEvent.
  *
@@ -83,5 +96,19 @@ export function isStorageUpdateEvent(
     "type" in message &&
     (message as Record<string, unknown>).type === "STORAGE_UPDATED" &&
     "source" in message
+  );
+}
+
+export function isTransactionStatusUpdateEvent(
+  message: unknown
+): message is TransactionStatusUpdateEvent {
+  return (
+    message !== null &&
+    typeof message === "object" &&
+    "type" in message &&
+    (message as Record<string, unknown>).type === "TRANSACTION_STATUS_UPDATE" &&
+    "source" in message &&
+    "external_id" in message &&
+    "status" in message
   );
 }

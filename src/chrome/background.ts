@@ -2,6 +2,7 @@
 import PluginManager from "./core/PluginManager";
 import {
   isRestRequestEvent,
+  isTransactionStatusUpdateEvent,
   type StorageUpdateEvent,
 } from "./core/types/requestBodyPipeline";
 import RogersBank from "./plugins/RogersBank";
@@ -124,36 +125,54 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
   }
 });
 
-// Listen for messages from content scripts
+// Listen for messages from content scripts and FireflyClient
 chrome.runtime.onMessage.addListener(async (message: unknown) => {
-  // Check if message instance of RestRequestEvent
-  if (!(isRestRequestEvent(message) && message.source === "bridge")) return;
+  // Handle RestRequestEvent from content scripts
+  if (isRestRequestEvent(message) && message.source === "bridge") {
+    const plugin = pluginManager.findMatchingPlugin(message.baseUrl);
+    if (plugin === undefined) return;
 
-  const plugin = pluginManager.findMatchingPlugin(message.baseUrl);
-  if (plugin === undefined) return;
+    const pluginData = {
+      displayName: plugin.displayName,
+      iconUrl: plugin.iconUrl,
+      fireflyAccountName: plugin.fireflyAccountName,
+      baseUrlPattern: plugin.getBaseUrlPattern().source,
+      apiUrlPattern: plugin.getApiUrlPattern().source,
+    };
 
-  const pluginData = {
-    displayName: plugin.displayName,
-    iconUrl: plugin.iconUrl,
-    fireflyAccountName: plugin.fireflyAccountName,
-    baseUrlPattern: plugin.getBaseUrlPattern().source,
-    apiUrlPattern: plugin.getApiUrlPattern().source,
-  };
+    const transactions = plugin.handleApiRequest(
+      message.apiUrl,
+      JSON.parse(message.body)
+    );
+    if (transactions === undefined) return;
 
-  const transactions = plugin.handleApiRequest(
-    message.apiUrl,
-    JSON.parse(message.body)
-  );
-  if (transactions === undefined) return;
+    await StorageOperations.replaceTransactionsForPlugin(
+      transactions,
+      pluginData
+    );
 
-  await StorageOperations.replaceTransactionsForPlugin(
-    transactions,
-    pluginData
-  );
+    // Notify UI to refresh from storage
+    notifyStorageUpdated();
 
-  // Notify UI to refresh from storage
-  notifyStorageUpdated();
+    // Show notification badge on popup icon
+    await badgeManager.showTransactionCount(transactions.length);
+    return;
+  }
 
-  // Show notification badge on popup icon
-  await badgeManager.showTransactionCount(transactions.length);
+  // Handle TransactionStatusUpdateEvent from FireflyClient
+  if (
+    isTransactionStatusUpdateEvent(message) &&
+    message.source === "firefly-client"
+  ) {
+    // Relay the status update message to all listeners (UI components)
+    try {
+      chrome.runtime.sendMessage(message);
+    } catch {
+      // No active listeners, that's okay
+      console.debug(
+        "No message receiver available for transaction status update relay"
+      );
+    }
+    return;
+  }
 });
