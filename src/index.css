@@ -119,20 +119,15 @@
   }
 }
 
-@keyframes wipeDown {
+@keyframes wipeLeft {
   0% {
-    opacity: 0;
-    transform: translateY(-20px);
-    clip-path: inset(0 0 100% 0);
-  }
-  50% {
-    opacity: 0.5;
-    transform: translateY(-10px);
-    clip-path: inset(0 0 50% 0);
+    opacity: 1;
+    clip-path: inset(0 100% 0 0);
+    background-color: #93c5fd;
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
-    clip-path: inset(0 0 0% 0);
+    clip-path: inset(0 0% 0 0);
+    background-color: transparent;
   }
 }

@@ -74,19 +74,14 @@ export default function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row, index) => (
+              table.getRowModel().rows.map((row) => (
                 <React.Fragment key={row.id}>
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className={cn(
-                      isAnimating && "animate-[wipeDown_0.6s_ease-out_both]"
+                      isAnimating && "animate-[wipeLeft_0.6s_ease-out_both]"
                     )}
-                    style={
-                      isAnimating
-                        ? { animationDelay: `${index * 50}ms` }
-                        : undefined
-                    }
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
