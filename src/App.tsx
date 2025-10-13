@@ -54,7 +54,7 @@ export default function App() {
 
   return (
     <div className="py-5 px-4">
-      <h1 className="text-3xl font-bold mb-3">OpenFin</h1>
+      <h1 className="text-3xl font-bold mb-3 text-center">OpenFin</h1>
       <DataTable columns={columns} data={transactions} />
     </div>
   );

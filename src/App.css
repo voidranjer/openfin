@@ -1,11 +1,12 @@
 #root {
   /* Chrome extension popup specific styles */
-  width: 600px;
-  min-height: 400px;
-  max-width: none;
+  /* width: fit-content; */
+  /* min-height: 400px; */
+  /* max-width: none; */
   margin: 0;
   /* padding: 1rem; */
   padding: 0;
-  text-align: center;
+  /* text-align: center; */
   border: 2px solid gray;
+  overflow: hidden;
 }

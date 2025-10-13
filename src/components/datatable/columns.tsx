@@ -14,7 +14,7 @@ export type DataTableTransaction = Pick<
 export const columns: ColumnDef<DataTableTransaction>[] = [
   {
     accessorKey: "description",
-    header: () => <div className="text-left">Description</div>,
+    header: () => <div className="text-center">Description</div>,
   },
   {
     accessorKey: "category_name",
@@ -38,7 +38,7 @@ export const columns: ColumnDef<DataTableTransaction>[] = [
   },
   {
     accessorKey: "amount",
-    header: () => <div className="text-right">Amount</div>,
+    header: () => <div className="text-center">Amount</div>,
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue("amount"));
       const type = row.getValue("type") as "deposit" | "withdrawal";
