@@ -1,241 +1,390 @@
 # OpenFin Browser Extension
 
-A Chrome extension that intercepts HTTP requests (fetch/XMLHttpRequest) from web pages to extract financial transaction data and transform it for external APIs like Firefly III. The extension captures financial data in the background and provides visual feedback via badge indicators when new transactions are detected.
+A Chrome extension that monitors financial websites and automatically captures transaction data from HTTP API responses. The extension uses a side panel interface and provides real-time notifications when new transactions are detected from supported financial institutions.
 
 ## Key Features
 
-- **Background Request Capture**: Monitors and captures financial transactions even when the popup is closed
-- **Badge Indicators**: Shows visual feedback on the extension icon when new transactions are found
-- **Persistent Storage**: Stores captured transactions locally so they persist across browser sessions
-- **Plugin Architecture**: Extensible system for adding support for new financial institutions
-- **Security Focused**: Multi-layered security with isolated execution contexts
+- **Automatic Transaction Detection**: Monitors API responses from banking websites in real-time
+- **Side Panel Interface**: Modern Chrome extension UI that opens alongside web pages
+- **Background Processing**: Captures and processes transactions even when the side panel is closed
+- **Badge Notifications**: Visual indicators showing transaction count on the extension icon
+- **Plugin Architecture**: Extensible system supporting multiple financial institutions
+- **Type-Safe Storage**: Centralized storage framework with TypeScript type safety
+- **Real-Time Updates**: Live transaction data synchronization between background and UI
 
 ## Architecture Overview
 
-This extension uses a multi-layered architecture to safely intercept and process web requests:
+This extension uses a Chrome Extension Manifest V3 architecture with a background service worker:
 
 ### Core Components
 
-1. **Content Script** (`src/chrome/content.ts`) - Intercepts web requests
-2. **Bridge Script** (`src/chrome/bridge.ts`) - Secure communication bridge
-3. **Background Service Worker** (`src/chrome/background.ts`) - Data processing and storage
-4. **Plugin System** (`src/chrome/core/`) - Extensible parsing framework
-5. **Storage Framework** (`src/chrome/core/StorageManager.ts`, `src/chrome/core/BadgeManager.ts`) - Type-safe storage operations
-6. **Popup Interface** (`src/App.tsx`) - User interface for viewing transactions
+1. **Content Script** (`src/chrome/content.ts`) - Intercepts HTTP requests and responses
+2. **Bridge Script** (`src/chrome/bridge.ts`) - Secure communication bridge between content and background
+3. **Background Service Worker** (`src/chrome/background.ts`) - Plugin management, data processing, and storage
+4. **Side Panel UI** (`src/App.tsx`) - React-based interface for viewing and managing transactions
+5. **Plugin System** (`src/chrome/core/Plugin.ts`, `src/chrome/core/PluginManager.ts`) - Extensible framework for financial institution support
+6. **Storage Framework** (`src/chrome/core/StorageManager.ts`) - Type-safe local storage operations
+7. **Badge Manager** (`src/chrome/core/BadgeManager.ts`) - Extension icon badge notifications
 
 ### Data Flow
 
 ```text
-Web Page → Content Script → Bridge → Background → [StorageManager + BadgeManager] → Popup UI
-                                        ↓
-                                   Plugin Manager → External API
-                                        ↓
-                                 StorageOperations ← React Components
+Banking Website API → Content Script → Bridge → Background Service Worker
+                                                        ↓
+                                                 Plugin Manager
+                                                        ↓
+                                              Storage Manager → Badge Manager
+                                                        ↓
+                                                  Side Panel UI
 ```
 
-## Request Interception Architecture
+## Detailed Architecture
 
-### 1. Content Script Layer
+### 1. Content Script (`src/chrome/content.ts`)
 
-**File**: `src/chrome/content.ts`
+The content script injects into banking websites and intercepts HTTP API calls:
 
-The content script runs in the context of web pages and intercepts HTTP requests by monkey-patching the native APIs:
+- **Fetch Interception**: Monkey-patches `window.fetch` to capture API responses
+- **XMLHttpRequest Interception**: Overrides XHR methods to capture traditional AJAX requests
+- **Response Cloning**: Safely clones response bodies without interfering with the original request
+- **Message Broadcasting**: Sends captured data to the bridge script via `window.postMessage`
 
-- **Fetch Interception**: Overrides `window.fetch` to capture responses
-- **XMLHttpRequest Interception**: Patches `XMLHttpRequest.prototype.open` and `XMLHttpRequest.prototype.send`
-- **Response Processing**: Clones and reads response bodies as text
-- **Message Forwarding**: Posts intercepted data to the bridge script via `window.postMessage`
+```typescript
+// Example of fetch interception
+window.fetch = function (...args) {
+  return originalFetch.apply(this, args).then((response) => {
+    response.clone().text().then((body) => {
+      window.postMessage({
+        type: "openfin-rest-request",
+        baseUrl: window.location.href,
+        apiUrl: fullUrl,
+        body: body,
+        source: "content",
+      }, "*");
+    });
+    return response;
+  });
+};
+```
 
-### 2. Bridge Script Layer
+### 2. Bridge Script (`src/chrome/bridge.ts`)
 
-**File**: `src/chrome/bridge.ts`
+Provides secure communication between content script and background service worker:
 
-Acts as a secure communication bridge between the content script and background script:
+- **Origin Validation**: Only accepts messages from the same origin to prevent security issues
+- **Message Filtering**: Validates message structure and type before forwarding
+- **Chrome API Access**: Bridges the gap between web page context and extension context
+- **Error Isolation**: Prevents page scripts from interfering with extension communication
 
-- **Isolated Execution**: Runs in an isolated world with access to Chrome extension APIs
-- **Message Filtering**: Only processes messages from the same origin with type `openfin-rest-request`
-- **API Forwarding**: Relays validated messages to the background script via `chrome.runtime.sendMessage`
+### 3. Background Service Worker (`src/chrome/background.ts`)
 
-### 3. Background Service Worker
+The core processing engine that handles all business logic:
 
-**File**: `src/chrome/background.ts`
-
-Handles business logic and external API communication:
-
-- **Plugin Management**: Registers and manages financial institution plugins
-- **URL Matching**: Finds appropriate plugins based on request URLs
-- **Data Processing**: Parses response bodies using matched plugins
-- **External Integration**: Sends processed transactions to external APIs (Firefly III)
+- **Plugin Registration**: Manages all financial institution plugins
+- **URL Pattern Matching**: Determines which plugin should process each request
+- **Tab Management**: Tracks active tabs and updates plugin state accordingly
+- **Side Panel Control**: Opens and manages the side panel interface
+- **Storage Coordination**: Orchestrates data storage and badge notifications
 
 ### 4. Plugin System
+
+The extension supports multiple financial institutions through a plugin architecture:
 
 **Base Plugin Class** (`src/chrome/core/Plugin.ts`):
 
 ```typescript
 abstract class Plugin<ApiResponse = unknown> {
-  abstract getUrlPattern(): RegExp | string;
+  fireflyAccountName: string;
+  displayName: string;
+  iconUrl: string;
+
+  abstract getBaseUrlPattern(): RegExp;    // For enabling plugin on specific sites
+  abstract getApiUrlPattern(): RegExp;     // For matching API requests
   abstract parseResponse(responseBody: ApiResponse): FireflyTransaction[];
 }
 ```
 
 **Plugin Manager** (`src/chrome/core/PluginManager.ts`):
 
-- Maintains registry of active plugins
-- Matches URLs against plugin patterns
-- Routes responses to appropriate parsers
+- **Plugin Registry**: Maintains list of all registered plugins
+- **URL Matching**: Finds appropriate plugin based on base URL patterns
+- **Request Routing**: Routes API responses to the correct plugin for parsing
+- **Plugin Metadata**: Provides plugin information for UI display
 
-**Example Plugin** (`src/chrome/plugins/ScotiabankScenePlus.ts`):
+**Current Plugins**:
 
-- URL Pattern: `/secure\.scotiabank\.com.*transaction-history.*accountType=CREDITCARD/`
-- Transforms Scotiabank API responses into standardized FireflyTransaction objects
+- `ScotiabankScenePlus`: Handles Scotiabank Scene+ credit card transactions
+- `ScotiabankChequing`: Processes Scotiabank chequing account data
+- `RogersBank`: Manages Rogers Bank Mastercard transactions
 
-## Message Protocol
+## Communication Protocol
 
-### RestRequestEvent Type
+### Message Types
+
+The extension uses several message types for internal communication:
 
 ```typescript
+// HTTP request interception
 type RestRequestEvent = {
   type: "openfin-rest-request";
-  url: string;
-  body: string;
+  baseUrl: string;    // Current page URL
+  apiUrl: string;     // API request URL
+  body: string;       // Response body
+  source: "content" | "bridge";
+};
+
+// Storage update notifications
+type StorageUpdateEvent = {
+  type: "STORAGE_UPDATED";
+  source: "background";
+};
+
+// Transaction status updates
+type TransactionStatusUpdateEvent = {
+  type: "TRANSACTION_STATUS_UPDATE";
+  transactionId: string;
+  status: "pending" | "success" | "error";
+  source: "firefly-client";
 };
 ```
 
 ### Communication Flow
 
-1. Content script captures HTTP response
-2. Creates `RestRequestEvent` with response data
-3. Posts message to bridge via `window.postMessage`
-4. Bridge validates and forwards to background via `chrome.runtime.sendMessage`
-5. Background processes with plugin system
-6. Transformed data sent to external APIs
+1. **Web Page** makes API request to banking service
+2. **Content Script** intercepts the response and extracts data
+3. **Bridge Script** validates and forwards message to background
+4. **Background Service Worker** processes with appropriate plugin
+5. **Plugin** transforms bank data into standardized `FireflyTransaction` format
+6. **Storage Manager** saves transactions and updates badge
+7. **Side Panel UI** receives storage update notifications and refreshes display
 
-## Background Processing & Storage
+## Storage & State Management
 
-### Persistent Data Capture
+### Centralized Storage Framework
 
-The extension now captures financial transaction data in the background, even when the popup is closed:
+The extension uses a type-safe storage framework built on Chrome's `chrome.storage.local` API:
 
-- **Background Storage**: Transactions are stored in `chrome.storage.local` immediately when captured
-- **Data Replacement**: Each new request replaces all previously stored transactions to ensure data freshness
-- **Persistent Access**: Stored transactions are automatically loaded when the popup is opened
+**StorageManager** (`src/chrome/core/StorageManager.ts`):
 
-### Badge Notification System
+- **Type Safety**: Full TypeScript support with defined storage schema
+- **Atomic Operations**: Safe concurrent read/write operations
+- **Error Handling**: Comprehensive error handling and logging
+- **Array Management**: Specialized methods for managing transaction arrays
 
-When new transactions are detected, the extension provides visual feedback:
+**StorageOperations Class**:
 
-- **Badge Indicator**: Shows the number of captured transactions on the extension icon
-- **Auto-clear**: Badge is cleared when the popup is opened
+- **High-Level Interface**: Domain-specific operations for common patterns
+- **Plugin-Aware**: Automatically handles per-plugin transaction storage
+- **React Integration**: Seamless integration with React components via hooks
 
-### Storage Framework
-
-The extension now uses a centralized storage framework that eliminates code duplication and provides type safety:
-
-- **StorageManager**: Core storage operations with type safety and error handling
-- **StorageOperations**: High-level domain-specific storage operations
-- **BadgeManager**: Centralized Chrome extension badge management
-- **useStorageOperations**: React hook for storage operations
-
-#### Storage Schema
+**Storage Schema**:
 
 ```typescript
 interface StorageSchema {
-  transactions: FireflyTransaction[];
-  currentPlugin: PluginStateEvent["plugin"];
-  registeredPlugins: RegisteredPlugin[];
+  pluginTransactions: Record<string, FireflyTransaction[]>;  // Per-plugin transaction storage
+  currentPlugin: PluginStateEvent["plugin"] | null;         // Active plugin info
+  registeredPlugins: RegisteredPlugin[];                    // Available plugins
 }
 ```
 
-#### Usage Examples
+### Badge Notification System
 
-```typescript
-// Load initial data
-const data = await StorageOperations.loadInitialData();
+**BadgeManager** (`src/chrome/core/BadgeManager.ts`) provides visual feedback:
 
-// Update a transaction
-await StorageOperations.updateTransaction(id, { category: 'Food' });
+- **Transaction Count**: Shows number of captured transactions on extension icon
+- **Status Indicators**: Different colors for success, warning, and error states
+- **Auto-Clear**: Badge clears when side panel is opened
+- **Semantic Methods**: `showTransactionCount()`, `showErrorBadge()`, `clearBadge()`
 
-// Show badge notification
-await badgeManager.showTransactionCount(5);
-```
+### Side Panel Interface
 
-For detailed documentation, see [`docs/STORAGE_FRAMEWORK.md`](docs/STORAGE_FRAMEWORK.md).
+Unlike traditional popup extensions, this uses Chrome's side panel API:
 
-## Security Considerations
+- **Persistent View**: Stays open while browsing, doesn't close when clicking away
+- **Tab Awareness**: Automatically updates content based on current tab
+- **Real-Time Updates**: Receives live notifications when new transactions are captured
+- **Plugin State**: Displays appropriate interface based on detected banking website
 
-- **Origin Validation**: Bridge only accepts messages from same origin
-- **Type Safety**: TypeScript type guards validate message structure
-- **Isolated Execution**: Bridge runs in isolated world preventing page script interference
-- **API Permissions**: Background script has controlled access to Chrome extension APIs
-- **Local Storage**: Transaction data is stored locally and never transmitted to external servers without explicit user consent
+## Security & Privacy
+
+### Security Measures
+
+- **Content Security Policy**: Strict CSP prevents code injection attacks
+- **Origin Validation**: Bridge script validates message sources and origins
+- **Isolated Execution**: Content scripts run in isolated worlds preventing interference
+- **Type Safety**: TypeScript and runtime type guards prevent malformed data processing
+- **Manifest V3**: Uses latest Chrome extension security model with service workers
+
+### Privacy Protection
+
+- **Local Storage Only**: All transaction data stored locally in browser storage
+- **No External Transmission**: Data never sent to external servers without explicit user action
+- **No Tracking**: Extension doesn't collect analytics or user behavior data
+- **Minimal Permissions**: Only requests necessary Chrome extension permissions
+- **Transparent Processing**: All data transformations happen locally and are auditable
 
 ## Adding New Financial Institution Support
 
-1. Create new plugin extending `Plugin<T>` base class
-2. Implement `getBaseUrlPattern()` to match institution's base URLs
-3. Implement `getApiUrlPattern()` to match API request URLs  
-4. Implement `parseResponse()` to transform API responses to `FireflyTransaction[]`
-5. Register plugin in `background.ts` with `pluginManager.register()`
+### Creating a New Plugin
 
-## Code Architecture Improvements
+1. **Create Plugin Class**: Extend the base `Plugin<T>` class in `src/chrome/plugins/`
 
-### Storage Framework Refactoring
+```typescript
+export default class MyBankPlugin extends Plugin<MyBankApiResponse> {
+  constructor(fireflyAccountName: string) {
+    super(fireflyAccountName);
+    this.displayName = "My Bank";
+    this.iconUrl = "https://example.com/bank-icon.png";
+  }
 
-The codebase has been refactored to eliminate storage-related code duplication through a centralized framework:
+  getBaseUrlPattern(): RegExp {
+    return /mybank\.com/;  // Enable on bank's main site
+  }
 
-- **Before**: Manual `chrome.storage.local` calls scattered throughout components
-- **After**: Type-safe storage operations through `StorageManager` and `StorageOperations`
-- **Benefits**: Reduced code duplication, improved type safety, consistent error handling
+  getApiUrlPattern(): RegExp {
+    return /api\/transactions/;  // Match transaction API calls
+  }
 
-### Badge Management
+  parseResponse(responseBody: MyBankApiResponse): FireflyTransaction[] {
+    // Transform bank's API response to FireflyTransaction format
+    return responseBody.transactions.map(tx => ({
+      type: tx.amount > 0 ? "deposit" : "withdrawal",
+      description: tx.description,
+      amount: Math.abs(tx.amount).toString(),
+      date: tx.date,
+      external_id: tx.id,
+      source_name: tx.amount < 0 ? this.fireflyAccountName : undefined,
+      destination_name: tx.amount > 0 ? this.fireflyAccountName : undefined,
+    }));
+  }
+}
+```
 
-Badge operations are now centralized through `BadgeManager`:
+1. **Register Plugin**: Add to `src/chrome/background.ts`
 
-- **Before**: Direct `chrome.action.setBadgeText()` calls in multiple files
-- **After**: Semantic methods like `showTransactionCount()`, `showErrorBadge()`
-- **Benefits**: Consistent badge behavior, easier testing, better maintainability
+```typescript
+import MyBankPlugin from "./plugins/MyBankPlugin";
 
-## Development
+pluginManager.register(new MyBankPlugin("My Bank Account"));
+```
+
+1. **Type Definitions**: Create types in `src/chrome/plugins/types/mybank.ts` if needed
+
+## Technical Implementation Details
+
+### Modern Chrome Extension Architecture
+
+This extension uses Chrome Extension Manifest V3 with modern best practices:
+
+- **Service Worker**: Background script runs as a service worker instead of persistent background page
+- **Side Panel API**: Uses Chrome's native side panel instead of traditional popup
+- **Chrome Storage**: Leverages `chrome.storage.local` for persistent data storage
+- **Tab Management**: Integrates with Chrome's tabs API for context awareness
+
+### React UI Framework
+
+The side panel interface is built with modern React:
+
+- **React 19**: Latest React version with concurrent features
+- **TypeScript**: Full type safety throughout the UI layer
+- **Tailwind CSS**: Utility-first CSS framework for rapid styling
+- **Radix UI**: Accessible component primitives for consistent UX
+- **Lucide React**: Modern icon system
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Chrome browser
+- Access to supported banking websites for testing
 
 ### Building the Extension
 
 ```bash
+# Install dependencies
 npm install
+
+# Build for development
+npm run dev
+
+# Build for production
 npm run build
+
+# Lint code
+npm run lint
 ```
 
 ### Loading in Chrome
 
+1. Build the extension using `npm run build`
 1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable "Developer mode"
-3. Click "Load unpacked" and select the project directory
-4. The extension will appear in your extensions list
+1. Enable "Developer mode" in the top right
+1. Click "Load unpacked" and select the `dist` directory
+1. The extension will appear in your extensions list
 
-### Testing
+### Testing the Extension
 
-Visit supported financial institution websites and perform actions that generate transaction data. The extension will automatically capture and display the data in the popup interface.
+1. **Visit a supported banking website** (e.g., secure.scotiabank.com)
+1. **Click the extension icon** in Chrome's toolbar to open the side panel
+1. **Navigate to transaction history** on the banking website
+1. **Check the side panel** - it should display captured transaction data
+1. **Verify badge notifications** - extension icon should show transaction count
 
-## React Hooks
+### Development Workflow
 
-The extension provides custom React hooks for common operations:
+- **Hot Reload**: The `npm run dev` command provides hot reloading during development
+- **Extension Reload**: After code changes, click the reload button in `chrome://extensions/`
+- **Console Debugging**: Use Chrome DevTools for the side panel and background service worker
+- **Storage Inspection**: View stored data in Chrome DevTools > Application > Storage
 
-### useOpenFin
+## React Hooks & Components
 
-Main hook for accessing transaction data and plugin state:
+### Custom Hooks
+
+**useOpenFin** - Main application state hook:
 
 ```typescript
 const { transactions, currentPlugin, updateTransaction } = useOpenFin();
+// Provides access to current transactions and plugin state
 ```
 
-### useStorageOperations
-
-Hook for direct access to storage operations:
+**useStorageOperations** - Direct storage access:
 
 ```typescript
 const { 
   loadInitialData, 
   updateTransaction, 
-  loadRegisteredPlugins,
-  clearAllStorage 
+  loadRegisteredPlugins 
 } = useStorageOperations();
+// Low-level storage operations for advanced use cases
 ```
+
+### Key Components
+
+- **Dashboard** (`src/components/Dashboard.tsx`) - Main transaction display interface
+- **Header** (`src/components/Header.tsx`) - Top navigation with plugin info
+- **DataTable** (`src/components/datatable/`) - Transaction table with sorting/filtering
+- **PluginsList** (`src/components/plugins/`) - Available plugins display
+- **FireflyExecutor** (`src/components/FireflyExecutor.tsx`) - External API integration
+
+## Project Structure
+
+```text
+src/
+├── chrome/                 # Chrome extension specific code
+│   ├── background.ts       # Service worker (main background script)
+│   ├── content.ts         # Content script (request interception)
+│   ├── bridge.ts          # Secure communication bridge
+│   ├── core/              # Core framework classes
+│   │   ├── Plugin.ts      # Base plugin class
+│   │   ├── PluginManager.ts # Plugin registry and routing
+│   │   ├── StorageManager.ts # Type-safe storage operations
+│   │   └── BadgeManager.ts # Extension badge management
+│   └── plugins/           # Financial institution plugins
+├── components/            # React UI components
+├── hooks/                # Custom React hooks
+└── lib/                  # Shared utilities
+```
+
+For more detailed documentation on the storage framework, see [`docs/STORAGE_FRAMEWORK.md`](docs/STORAGE_FRAMEWORK.md).

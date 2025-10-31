@@ -185,15 +185,23 @@ The framework enforces a centralized storage schema:
 
 ```typescript
 interface StorageSchema {
-  pluginTransactions: Record<string, FireflyTransaction[]>;
-  currentPlugin: PluginStateEvent["plugin"];
-  registeredPlugins: RegisteredPlugin[];
+  pluginTransactions: Record<string, FireflyTransaction[]>;  // Per-plugin transaction storage
+  currentPlugin: PluginStateEvent["plugin"] | null;         // Active plugin info
+  registeredPlugins: RegisteredPlugin[];                    // Available plugins
+  fireflyHost: string;                                      // Firefly III server URL
+  fireflyToken: string;                                     // Firefly III API token
 }
 ```
 
-The `pluginTransactions` field stores transactions organized by plugin key, ensuring that each plugin maintains its own transaction space. Plugin keys are generated based on the plugin's display name and Firefly account name.
+### Schema Fields
 
-Adding new storage keys requires updating this schema, ensuring type safety across the application.
+- **pluginTransactions**: Stores transactions organized by plugin key, ensuring each plugin maintains its own transaction space
+- **currentPlugin**: Contains information about the currently active plugin (or null if none)
+- **registeredPlugins**: List of all available plugins with their metadata
+- **fireflyHost**: External Firefly III server URL for API integration
+- **fireflyToken**: Authentication token for Firefly III API access
+
+Plugin keys are generated based on the plugin's display name and Firefly account name. Adding new storage keys requires updating this schema to ensure type safety across the application.
 
 ## Usage Guidelines
 
