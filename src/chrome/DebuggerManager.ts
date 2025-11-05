@@ -95,13 +95,14 @@ export class DebuggerManager extends EventEmitter {
   }
 
   async attachDebugger(tabId: number) {
-    if (this.debuggerTabId) {
-      console.error(
-        "Debugger is already attached to a tab:",
-        this.debuggerTabId,
-        ". Skipping..."
-      );
+    if (this.debuggerTabId === tabId) {
+      console.debug("Attempted to attach debugger to the same tab. Ignoring...");
       return;
+    }
+
+    if (this.debuggerTabId) {
+      console.debug("Debugger is already attached to a tab. Reattaching...");
+      this.detachDebugger();
     }
 
     // Get tab information to check URL

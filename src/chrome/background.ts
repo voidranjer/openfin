@@ -1,13 +1,42 @@
 import PluginManager from "./core/PluginManager";
 import RogersBank from "./plugins/RogersBank";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
-import { StorageOperations } from "./core/StorageManager";
 import ScotiabankChequing from "./plugins/ScotiabankChequing";
 import RBC from "./plugins/RBC";
 import { DebuggerManager } from "./DebuggerManager";
-
+// Singleton: Debugger Manager
 const debuggerManager = new DebuggerManager();
 
+// Singleton: Plugin Manager
+const pluginManager = new PluginManager();
+
+pluginManager.register(
+  new ScotiabankScenePlus("Scene Plus VISA") // TODO: change to actual name
+);
+pluginManager.register(
+  new RogersBank("Rogers Red Mastercard") // TODO: change to actual name
+);
+pluginManager.register(
+  new ScotiabankChequing("Chequing") // TODO: change to actual name
+);
+
+// State: Track if side panel is open
+let isSidePanelOpen = false;
+
+// Helper: Reattach or detach debugger based on current tab URL
+function reattachDebuggerConditionally(baseUrl: string, tabId: number) {
+  const plugin = pluginManager.findMatchingPlugin(baseUrl);
+  if (plugin === undefined) {
+    debuggerManager.detachDebugger();
+    return;
+  }
+  debuggerManager.attachDebugger(tabId);
+}
+
+// Configuration: Allows users to open the side panel by clicking on the action toolbar icon
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+
+// Event: Send transactions to frontend
 debuggerManager.on("responseReceived", async (data) => {
   const { url, body, base64Encoded } = data;
 
@@ -34,27 +63,7 @@ debuggerManager.on("responseReceived", async (data) => {
   });
 });
 
-const pluginManager = new PluginManager();
-
-pluginManager.register(
-  new ScotiabankScenePlus("Scene Plus VISA") // TODO: change to actual name
-);
-pluginManager.register(
-  new RogersBank("Rogers Red Mastercard") // TODO: change to actual name
-);
-pluginManager.register(
-  new ScotiabankChequing("Chequing") // TODO: change to actual name
-);
-pluginManager.register(
-  new RBC("RBC") // TODO: change to actual name
-);
-
-// Store registered plugins information in storage
-const registeredPlugins = pluginManager.getRegisteredPlugins();
-StorageOperations.storeRegisteredPlugins(registeredPlugins);
-
-let isSidePanelOpen = false;
-
+// Event: Handle sidePanel open/close
 chrome.runtime.onConnect.addListener(async (port) => {
   if (port.name === "sidepanel") {
     console.debug("Side panel connected.");
@@ -64,9 +73,7 @@ chrome.runtime.onConnect.addListener(async (port) => {
 
     if (!currentTab.url || !currentTab.id) return;
 
-    const plugin = pluginManager.findMatchingPlugin(currentTab.url);
-    if (plugin === undefined) debuggerManager.detachDebugger();
-    if (plugin !== undefined) debuggerManager.attachDebugger(currentTab.id);
+    reattachDebuggerConditionally(currentTab.url, currentTab.id);
 
     isSidePanelOpen = true;
 
@@ -79,9 +86,7 @@ chrome.runtime.onConnect.addListener(async (port) => {
   }
 });
 
-// Allows users to open the side panel by clicking on the action toolbar icon
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
-
+// Event: Current active tab has changed
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   if (!isSidePanelOpen) return;
 
@@ -93,14 +98,12 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   if (plugin !== undefined) debuggerManager.attachDebugger(activeInfo.tabId);
 });
 
+// Event: Tab has been updated (e.g., URL change, navigation)
 chrome.tabs.onUpdated.addListener((_tabId, _info, tab) => {
   if (!isSidePanelOpen) return;
+  if (!tab.url || !tab.id || !tab.active) return;
 
-  if (!tab.url || !tab.id) return;
-
-  const plugin = pluginManager.findMatchingPlugin(tab.url);
-  if (plugin === undefined) debuggerManager.detachDebugger();
-  if (plugin !== undefined) debuggerManager.attachDebugger(tab.id);
+  reattachDebuggerConditionally(tab.url, tab.id);
 });
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
