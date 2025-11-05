@@ -2,6 +2,10 @@
 
 A Chrome extension that monitors financial websites and automatically captures transaction data from HTTP API responses. The extension uses a side panel interface and provides real-time notifications when new transactions are detected from supported financial institutions.
 
+![Preview](docs/preview.png)
+
+> This README.md file is severely outdated. Pending update!
+
 ## Key Features
 
 - **Automatic Transaction Detection**: Monitors API responses from banking websites in real-time
