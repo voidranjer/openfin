@@ -10,6 +10,7 @@ import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 import { StorageOperations } from "./core/StorageManager";
 import { badgeManager } from "./core/BadgeManager";
 import ScotiabankChequing from "./plugins/ScotiabankChequing";
+import RBC from "./plugins/RBC";
 
 // Helper function to notify UI that storage has been updated
 function notifyStorageUpdated() {
@@ -37,6 +38,9 @@ pluginManager.register(
 );
 pluginManager.register(
   new ScotiabankChequing("Chequing") // TODO: change to actual name
+);
+pluginManager.register(
+  new RBC("RBC") // TODO: change to actual name
 );
 
 // Store registered plugins information in storage
