@@ -3,7 +3,8 @@ import RogersBank from "./plugins/RogersBank";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 import ScotiabankChequing from "./plugins/ScotiabankChequing";
 import RBC from "./plugins/RBC";
-import { DebuggerManager } from "./DebuggerManager";
+import DebuggerManager from "./DebuggerManager";
+//
 // Singleton: Debugger Manager
 const debuggerManager = new DebuggerManager();
 
@@ -18,6 +19,9 @@ pluginManager.register(
 );
 pluginManager.register(
   new ScotiabankChequing("Chequing") // TODO: change to actual name
+);
+pluginManager.register(
+  new RBC("RBC") // TODO: change to actual name
 );
 
 // State: Track if side panel is open

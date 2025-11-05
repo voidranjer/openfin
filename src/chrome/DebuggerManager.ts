@@ -236,3 +236,5 @@ export class DebuggerManager extends EventEmitter {
     });
   }
 }
+
+export default DebuggerManager;
