@@ -1,39 +1,13 @@
+import { useEffect, useState } from "react";
 import { Cell, Column, Table } from "@blueprintjs/table";
+
+import { type FireflyTransaction } from "./chrome/core/types/firefly";
 
 import "./App.css";
 
 
-export type FireflyTransaction = {
-  type: "withdrawal" | "deposit";
-  description: string;
-  category_name: string;
-  amount: number;
-  date: string;
-  external_id: string;
-  notes?: string | null;
-  source_name?: string | null;
-  destination_name?: string | null;
-  original_category_name?: string; // Track original category to detect edits
-  status?:
-  | "pending"
-  | "checking"
-  | "posting"
-  | "success"
-  | "error"
-  | "duplicate";
-};
-
 export default function App() {
-  const data: FireflyTransaction[] = [
-    {
-      type: "withdrawal",
-      description: "Grocery Store",
-      category_name: "Groceries",
-      amount: 75.50,
-      date: "2024-06-15",
-      external_id: "txn_001",
-    }
-  ]
+  const [data, setData] = useState<FireflyTransaction[]>([]);
 
   const descriptionCellRenderer = (rowIndex: number) => <Cell>{data[rowIndex].description}</Cell>;
   const dateCellRenderer = (rowIndex: number) => <Cell>{data[rowIndex].date}</Cell>;
@@ -44,6 +18,25 @@ export default function App() {
       : <Cell style={{ color: "red" }}>-${transaction.amount.toFixed(2)}</Cell>;
   }
   const externalIdCellRenderer = (rowIndex: number) => <Cell>{data[rowIndex].external_id}</Cell>;
+  const notesCellRenderer = (rowIndex: number) => <Cell>{data[rowIndex].notes ?? ""}</Cell>;
+
+  useEffect(() => {
+    chrome.runtime.connect({ name: 'sidepanel' });
+
+
+    function handleMessage(message: any) {
+      if (message.type === "FIREFLY_III_TRANSACTION") {
+        setData(message.data);
+      }
+    }
+
+    chrome.runtime.onMessage.addListener(handleMessage);
+
+    // Cleanup listener on unmount
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+    };
+  }, [])
 
 
   return (
@@ -59,12 +52,13 @@ export default function App() {
         Plugin: Scotiabank (Scene+ VISA)
       </div>
 
-      <Table numRows={data.length}>
+      <Table numRows={data.length} cellRendererDependencies={data}>
         <Column name="Description" cellRenderer={descriptionCellRenderer} />
         <Column name="Date" cellRenderer={dateCellRenderer} />
         <Column name="Category" cellRenderer={categoryCellRenderer} />
         <Column name="Amount" cellRenderer={amountCellRenderer} />
         <Column name="External ID" cellRenderer={externalIdCellRenderer} />
+        <Column name="Notes" cellRenderer={notesCellRenderer} />
       </Table>
 
     </div>

@@ -14,6 +14,13 @@ export default class PluginManager {
     });
   }
 
+  findMatchingPluginByApiUrl(apiUrl: string): Plugin | undefined {
+    return this.plugins.find((plugin) => {
+      const pattern = plugin.getApiUrlPattern();
+      return pattern.test(apiUrl);
+    });
+  }
+
   getRegisteredPlugins() {
     return this.plugins.map((plugin) => ({
       displayName: plugin.displayName,

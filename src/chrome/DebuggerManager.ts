@@ -6,6 +6,22 @@
 //
 // TODO: Closing the pane should detach all debuggers and event handlers
 
+import { EventEmitter } from 'events'; // relevant packages: 'events', '@types/events'. provides DebuggerManager.on("responseReceived"), and this.emit("responseReceived")
+
+interface DebuggerManagerEvents {
+  'attached': (tabId: number) => void;
+  'detached': (tabId: number) => void;
+  'responseReceived': (data: {
+    url?: string;
+    body?: string;
+    base64Encoded: boolean;
+  }) => void;
+}
+
+export declare interface DebuggerManager {
+  on<U extends keyof DebuggerManagerEvents>(event: U, listener: DebuggerManagerEvents[U]): this;
+  emit<U extends keyof DebuggerManagerEvents>(event: U, ...args: Parameters<DebuggerManagerEvents[U]>): boolean;
+}
 
 type NetworkGetResponseBodyResult = {
   body?: string;
@@ -45,21 +61,23 @@ function extractUrl(params?: object): string | undefined {
   return typeof url === "string" ? url : undefined;
 }
 
-
-
-export default class DebuggerManager {
+export class DebuggerManager extends EventEmitter {
   debuggerTabId: number | null = null;
-  private pendingResponseBodies = new Set<string>();
-  private boundHandleDebuggerEvent: (source: chrome.debugger.DebuggerSession, method: string, params?: object) => void;
+  private pendingResponseBodies = new Map<string, string>(); // requestId -> url
+  private boundHandleDebuggerEvent: (
+    source: chrome.debugger.DebuggerSession,
+    method: string,
+    params?: object
+  ) => void;
 
   constructor() {
+    super();
     this.boundHandleDebuggerEvent = this.handleDebuggerEvent.bind(this);
   }
 
   isDebuggerAttached(): boolean {
     return this.debuggerTabId !== null;
   }
-
 
   detachDebugger() {
     if (!this.debuggerTabId) return;
@@ -78,7 +96,11 @@ export default class DebuggerManager {
 
   async attachDebugger(tabId: number) {
     if (this.debuggerTabId) {
-      console.error("Debugger is already attached to a tab:", this.debuggerTabId, ". Skipping...");
+      console.error(
+        "Debugger is already attached to a tab:",
+        this.debuggerTabId,
+        ". Skipping..."
+      );
       return;
     }
 
@@ -111,7 +133,7 @@ export default class DebuggerManager {
     chrome.debugger.onEvent.addListener(this.boundHandleDebuggerEvent);
   }
 
-  private handleDebuggerEvent = (
+  private handleDebuggerEvent = async (
     source: chrome.debugger.DebuggerSession,
     method: string,
     params?: object
@@ -134,7 +156,7 @@ export default class DebuggerManager {
     }
 
     if (method === "Network.responseReceived") {
-      const url = extractUrl(params); // this param only exists on "Network.responseReceived" events
+      const url = extractUrl(params); // this param only exists on "Network.responseReceived" events, but we need to use it in Network.loadingFinished. store it in the map now.
       if (!url) {
         console.warn(
           "Received debugger event without URL! Will not process further."
@@ -142,33 +164,31 @@ export default class DebuggerManager {
         return;
       }
 
-      this.pendingResponseBodies.add(requestId);
+      this.pendingResponseBodies.set(requestId, url);
       return;
     }
 
-    else if (method === "Network.loadingFinished") {
+    if (method === "Network.loadingFinished") {
       if (!this.pendingResponseBodies.has(requestId)) {
         return;
       }
 
+      const url = this.pendingResponseBodies.get(requestId);
       this.pendingResponseBodies.delete(requestId);
 
       // Use this.debuggerTabId which is always current
-      void getResponseBody(this.debuggerTabId!, requestId)
-        .then((response) => {
-          if (!response.body) {
-            return;
-          }
-          console.log("INTERCEPTED BODY:", response.body);
-          console.log("IS BASE64 ENCODED:", Boolean(response.base64Encoded));
-        })
-        .catch((error) => {
-          console.error("Failed to retrieve response body:", error);
-        });
+      const response = await getResponseBody(this.debuggerTabId!, requestId)
+
+      this.emit('responseReceived', {
+        url,
+        body: response.body,
+        base64Encoded: !!response.base64Encoded,
+      });
+
       return;
     }
 
-    else if (method === "Network.loadingFailed") {
+    if (method === "Network.loadingFailed") {
       this.pendingResponseBodies.delete(requestId);
       console.warn(`Network loading failed for request ${requestId}`);
       return;
@@ -179,27 +199,27 @@ export default class DebuggerManager {
     if (!url) return true;
 
     const restrictedPrefixes = [
-      'chrome://',
-      'chrome-extension://',
-      'about:',
-      'moz-extension://',
-      'edge://',
-      'opera://'
+      "chrome://",
+      "chrome-extension://",
+      "about:",
+      "moz-extension://",
+      "edge://",
+      "opera://",
     ];
 
-    return restrictedPrefixes.some(prefix => url.startsWith(prefix));
+    return restrictedPrefixes.some((prefix) => url.startsWith(prefix));
   }
 
   private async waitForTabComplete(tabId: number): Promise<void> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('Tab loading timeout'));
+        reject(new Error("Tab loading timeout"));
       }, 10000); // 10 second timeout
 
       const checkTab = async () => {
         try {
           const tab = await chrome.tabs.get(tabId);
-          if (tab.status === 'complete') {
+          if (tab.status === "complete") {
             clearTimeout(timeout);
             resolve();
           } else {
@@ -215,4 +235,3 @@ export default class DebuggerManager {
     });
   }
 }
-

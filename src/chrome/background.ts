@@ -1,35 +1,41 @@
-// import FireflyClient from "./core/FireflyClient";
 import PluginManager from "./core/PluginManager";
-import {
-  isRestRequestEvent,
-  isTransactionStatusUpdateEvent,
-  type StorageUpdateEvent,
-} from "./core/types/requestBodyPipeline";
 import RogersBank from "./plugins/RogersBank";
 import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 import { StorageOperations } from "./core/StorageManager";
-import { badgeManager } from "./core/BadgeManager";
 import ScotiabankChequing from "./plugins/ScotiabankChequing";
 import RBC from "./plugins/RBC";
+import { DebuggerManager } from "./DebuggerManager";
 
-// Helper function to notify UI that storage has been updated
-function notifyStorageUpdated() {
-  const message: StorageUpdateEvent = {
-    type: "STORAGE_UPDATED",
-    source: "background",
-  };
+const debuggerManager = new DebuggerManager();
 
-  try {
-    chrome.runtime.sendMessage(message);
-  } catch {
-    // UI might not be open, that's okay
-    console.debug(
-      "No message receiver available for storage update notification"
+debuggerManager.on("responseReceived", async (data) => {
+  const { url, body, base64Encoded } = data;
+
+  if (base64Encoded) {
+    console.warn(
+      "Encountered base64 encoded response body for URL:",
+      url,
+      ". Stopping here..."
     );
+    return;
   }
-}
+
+  if (!url || !body) return;
+
+  const plugin = pluginManager.findMatchingPluginByApiUrl(url);
+  if (!plugin) return;
+
+  const jsonBody = await JSON.parse(body);
+  const transactions = plugin.parseResponse(jsonBody);
+
+  chrome.runtime.sendMessage({
+    type: "FIREFLY_III_TRANSACTION",
+    data: transactions,
+  });
+});
 
 const pluginManager = new PluginManager();
+
 pluginManager.register(
   new ScotiabankScenePlus("Scene Plus VISA") // TODO: change to actual name
 );
@@ -47,136 +53,60 @@ pluginManager.register(
 const registeredPlugins = pluginManager.getRegisteredPlugins();
 StorageOperations.storeRegisteredPlugins(registeredPlugins);
 
-/* Sidebar */
-// Handle extension icon clicks
-chrome.action.onClicked.addListener(async (tab) => {
-  if (!tab.id || !tab.url) {
-    return;
-  }
+let isSidePanelOpen = false;
 
-  const plugin = pluginManager.findMatchingPlugin(tab.url);
+chrome.runtime.onConnect.addListener(async (port) => {
+  if (port.name === "sidepanel") {
+    console.debug("Side panel connected.");
 
-  const pluginData = plugin
-    ? {
-        displayName: plugin.displayName,
-        iconUrl: plugin.iconUrl,
-        fireflyAccountName: plugin.fireflyAccountName,
-        baseUrlPattern: plugin.getBaseUrlPattern().source,
-        apiUrlPattern: plugin.getApiUrlPattern().source,
-      }
-    : null;
+    let queryOptions = { active: true, currentWindow: true };
+    let [currentTab] = await chrome.tabs.query(queryOptions);
 
-  // Store current plugin state in storage
-  await StorageOperations.updateCurrentPlugin(pluginData);
+    if (!currentTab.url || !currentTab.id) return;
 
-  try {
-    // Open the side panel
-    await chrome.sidePanel.open({ tabId: tab.id });
+    const plugin = pluginManager.findMatchingPlugin(currentTab.url);
+    if (plugin === undefined) debuggerManager.detachDebugger();
+    if (plugin !== undefined) debuggerManager.attachDebugger(currentTab.id);
 
-    // Notify UI to refresh from storage
-    notifyStorageUpdated();
-  } catch (error) {
-    console.error("Failed to open side panel:", error);
+    isSidePanelOpen = true;
+
+    port.onDisconnect.addListener(() => {
+      console.debug("Side panel disconnected/closed.");
+      debuggerManager.detachDebugger();
+
+      isSidePanelOpen = false;
+    });
   }
 });
 
-// Helper function to update plugin state in storage
-async function updatePluginState(tab: chrome.tabs.Tab) {
-  if (!tab.url) return;
-
-  const plugin = pluginManager.findMatchingPlugin(tab.url);
-
-  const pluginData = plugin
-    ? {
-        displayName: plugin.displayName,
-        iconUrl: plugin.iconUrl,
-        fireflyAccountName: plugin.fireflyAccountName,
-        baseUrlPattern: plugin.getBaseUrlPattern().source,
-        apiUrlPattern: plugin.getApiUrlPattern().source,
-      }
-    : null;
-
-  // Store current plugin state in storage
-  await StorageOperations.updateCurrentPlugin(pluginData);
-
-  // Notify UI to refresh from storage
-  notifyStorageUpdated();
-}
-
-chrome.tabs.onUpdated.addListener(async (_tabId, _info, tab) => {
-  updatePluginState(tab);
-});
+// Allows users to open the side panel by clicking on the action toolbar icon
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  try {
-    const tab = await chrome.tabs.get(activeInfo.tabId);
-    updatePluginState(tab);
-  } catch (error) {
-    console.error("Failed to get tab info on activation:", error);
-  }
+  if (!isSidePanelOpen) return;
+
+  const baseUrl = (await chrome.tabs.get(activeInfo.tabId)).url;
+  if (!baseUrl) return;
+
+  const plugin = pluginManager.findMatchingPlugin(baseUrl);
+  if (plugin === undefined) debuggerManager.detachDebugger();
+  if (plugin !== undefined) debuggerManager.attachDebugger(activeInfo.tabId);
 });
 
-// const fireflyClient = new FireflyClient(
-//   "http://localhost:8000", // TODO: change to actual URL
-//   "REPLACE_WITH_FIREFLY_API_KEY"
-// );
+chrome.tabs.onUpdated.addListener((_tabId, _info, tab) => {
+  if (!isSidePanelOpen) return;
+
+  if (!tab.url || !tab.id) return;
+
+  const plugin = pluginManager.findMatchingPlugin(tab.url);
+  if (plugin === undefined) debuggerManager.detachDebugger();
+  if (plugin !== undefined) debuggerManager.attachDebugger(tab.id);
+});
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === "install") {
     // chrome.storage.local.set({
     //   apiSuggestions: ['tabs', 'storage', 'scripting']
     // });
-  }
-});
-
-// Listen for messages from content scripts and FireflyClient
-chrome.runtime.onMessage.addListener(async (message: unknown) => {
-  // Handle RestRequestEvent from content scripts
-  if (isRestRequestEvent(message) && message.source === "bridge") {
-    const plugin = pluginManager.findMatchingPlugin(message.baseUrl);
-    if (plugin === undefined) return;
-
-    const pluginData = {
-      displayName: plugin.displayName,
-      iconUrl: plugin.iconUrl,
-      fireflyAccountName: plugin.fireflyAccountName,
-      baseUrlPattern: plugin.getBaseUrlPattern().source,
-      apiUrlPattern: plugin.getApiUrlPattern().source,
-    };
-
-    const transactions = plugin.handleApiRequest(
-      message.apiUrl,
-      JSON.parse(message.body)
-    );
-    if (transactions === undefined) return;
-
-    await StorageOperations.replaceTransactionsForPlugin(
-      transactions,
-      pluginData
-    );
-
-    // Notify UI to refresh from storage
-    notifyStorageUpdated();
-
-    // Show notification badge on popup icon
-    await badgeManager.showTransactionCount(transactions.length);
-    return;
-  }
-
-  // Handle TransactionStatusUpdateEvent from FireflyClient
-  if (
-    isTransactionStatusUpdateEvent(message) &&
-    message.source === "firefly-client"
-  ) {
-    // Relay the status update message to all listeners (UI components)
-    try {
-      chrome.runtime.sendMessage(message);
-    } catch {
-      // No active listeners, that's okay
-      console.debug(
-        "No message receiver available for transaction status update relay"
-      );
-    }
-    return;
   }
 });
