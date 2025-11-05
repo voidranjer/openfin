@@ -14,18 +14,10 @@
   "side_panel": {
     "default_path": "dist/index.html"
   },
-  "content_scripts": [
-    {
-      "js": ["dist/chrome/content.js"],
-      "matches": ["<all_urls>"],
-      "run_at": "document_start",
-      "world": "MAIN"
-    },
-    {
-      "js": ["dist/chrome/bridge.js"],
-      "matches": ["<all_urls>"],
-      "run_at": "document_start"
-    }
-  ],
-  "permissions": ["storage", "sidePanel", "tabs"]
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "tabs",
+    "debugger"
+  ]
 }

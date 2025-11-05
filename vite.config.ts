@@ -25,8 +25,8 @@ export default defineConfig({
         main: resolve(__dirname, "index.html"),
         // Chrome extension files
         background: resolve(__dirname, "src/chrome/background.ts"),
-        content: resolve(__dirname, "src/chrome/content.ts"),
-        bridge: resolve(__dirname, "src/chrome/bridge.ts"),
+        // content: resolve(__dirname, "src/chrome/content.ts"),
+        // bridge: resolve(__dirname, "src/chrome/bridge.ts"),
       },
       output: {
         entryFileNames: (chunkInfo) => {
