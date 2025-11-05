@@ -34,7 +34,7 @@ export default class RBC extends Plugin<RbcApiResponse> {
       const isPayment = t.creditDebitIndicator === 'DEBIT';
 
       const payload: FireflyTransaction = {
-        type: isPayment ? "deposit" : "withdrawal",
+        type: isPayment ? "withdrawal" : "deposit",
         description: `${t.description[1]} ${t.merchantName}`,
         notes: t.notes,
         category_name: t.description[0],
