@@ -125,14 +125,6 @@ export default class DebuggerManager {
       return;
     }
 
-    const url = extractUrl(params);
-    if (!url) {
-      console.warn(
-        "Received debugger event without URL! Will not process further."
-      );
-      return;
-    }
-
     const requestId = extractRequestId(params);
     if (!requestId) {
       console.warn(
@@ -142,11 +134,19 @@ export default class DebuggerManager {
     }
 
     if (method === "Network.responseReceived") {
+      const url = extractUrl(params); // this param only exists on "Network.responseReceived" events
+      if (!url) {
+        console.warn(
+          "Received debugger event without URL! Will not process further."
+        );
+        return;
+      }
+
       this.pendingResponseBodies.add(requestId);
       return;
     }
 
-    if (method === "Network.loadingFinished") {
+    else if (method === "Network.loadingFinished") {
       if (!this.pendingResponseBodies.has(requestId)) {
         return;
       }
@@ -168,9 +168,9 @@ export default class DebuggerManager {
       return;
     }
 
-    if (method === "Network.loadingFailed") {
+    else if (method === "Network.loadingFailed") {
       this.pendingResponseBodies.delete(requestId);
-      console.warn(`Network loading failed for request ${requestId} (URL: ${url})`);
+      console.warn(`Network loading failed for request ${requestId}`);
       return;
     }
   };
