@@ -8,6 +8,7 @@ import "./App.css";
 
 export default function App() {
   const [data, setData] = useState<FireflyTransaction[]>([]);
+  const [pluginName, setPluginName] = useState<string>("");
 
   const descriptionCellRenderer = (rowIndex: number) => <Cell>{data[rowIndex].description}</Cell>;
   const dateCellRenderer = (rowIndex: number) => <Cell>{data[rowIndex].date}</Cell>;
@@ -26,7 +27,8 @@ export default function App() {
 
     function handleMessage(message: any) {
       if (message.type === "FIREFLY_III_TRANSACTION") {
-        setData(message.data);
+        setPluginName(message.data.pluginName);
+        setData(message.data.transactions);
       }
     }
 
@@ -49,7 +51,7 @@ export default function App() {
       </div>
 
       <div className="font-bold">
-        Plugin: Scotiabank (Scene+ VISA)
+        Plugin: {pluginName || "No plugin detected"}
       </div>
 
       <Table numRows={data.length} cellRendererDependencies={data}>

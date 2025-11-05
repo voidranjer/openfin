@@ -30,6 +30,7 @@ function reattachDebuggerConditionally(baseUrl: string, tabId: number) {
     debuggerManager.detachDebugger();
     return;
   }
+
   debuggerManager.attachDebugger(tabId);
 }
 
@@ -59,7 +60,7 @@ debuggerManager.on("responseReceived", async (data) => {
 
   chrome.runtime.sendMessage({
     type: "FIREFLY_III_TRANSACTION",
-    data: transactions,
+    data: { pluginName: plugin.displayName, transactions },
   });
 });
 
