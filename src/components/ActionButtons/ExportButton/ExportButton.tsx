@@ -48,11 +48,11 @@ export default function ExportButton({ transactions, pluginName }: Props) {
 
   return (
     <Button
-      className="text-black bg-purple-200 hover:bg-purple-300"
+      className="text-black bg-purple-200 hover:bg-purple-300 group"
       size="sm"
       onClick={exportCSV}
     >
-      <FiDownload />
+      <FiDownload className="transition-transform duration-300 ease-in-out group-hover:scale-150" />
       Export
     </Button>
   );

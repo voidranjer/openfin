@@ -6,14 +6,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import type React from "react";
+
+type Props = {
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  children?: React.ReactNode;
+};
 
 export default function CategoryConfigDialog({
+  isOpen,
+  setIsOpen,
   children,
-}: {
-  children?: React.ReactNode;
-}) {
+}: Props) {
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>

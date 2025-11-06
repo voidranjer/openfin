@@ -110,11 +110,11 @@ export default function CategorizeButton({
 
   return (
     <Button
-      className="text-black bg-blue-200 hover:bg-blue-300"
+      className="text-black bg-blue-200 hover:bg-blue-300 group"
       size="sm"
       onClick={handleCategorize}
     >
-      <IoPlayOutline />
+      <IoPlayOutline className="transition-transform duration-300 ease-in-out group-hover:scale-150" />
       Categorize
     </Button>
   );
