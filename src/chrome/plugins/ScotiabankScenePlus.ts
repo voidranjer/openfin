@@ -6,7 +6,7 @@ import type { ScenePlusApiResponse } from "./types/scotiabank";
 export default class ScotiabankScenePlus extends Plugin<ScenePlusApiResponse> {
   constructor(fireflyAccountName: string) {
     super(fireflyAccountName);
-    this.displayName = "Scotiabank Scene+";
+    this.displayName = "Scotiabank Scene Plus";
     this.iconUrl =
       "https://ofa.on.ca/wp-content/uploads/2023/11/MicrosoftTeams-image-5.png";
   }
