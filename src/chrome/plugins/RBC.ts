@@ -35,7 +35,7 @@ export default class RBC extends Plugin<RbcApiResponse> {
 
       const payload: FireflyTransaction = {
         type: isPayment ? "withdrawal" : "deposit",
-        description: `${t.description.length > 1 ? t.description[1] : ""} ${t.merchantName}`,
+        description: t.description.length > 1 ? t.description[1] : "",
         notes: t.notes,
         category_name: t.description[0],
         amount: t.amount,
