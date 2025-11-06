@@ -1,11 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type React from "react";
+import { useState } from "react";
 import { IoPlayOutline } from "react-icons/io5";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
+import { defaultCategories } from "@/components/ActionButtons/Categorization/CategoryConfigDialog/CategoryConfigDialog";
+import useChromeStorage from "@/hooks/useChromeStorage";
 
-async function categorizeLLM(categories: string[], transactions: string[]) {
+async function categorizeLLM(
+  transactions: string[],
+  categories: string,
+  rules: string
+) {
   const ai = new GoogleGenAI({
     // apiKey: process.env.GEMINI_API_KEY,
   });
@@ -38,13 +45,13 @@ async function categorizeLLM(categories: string[], transactions: string[]) {
       role: "user",
       parts: [
         {
-          text: `Categories: ${categories.join(",")}
+          text: `Categories: ${categories}
 
           Transactions:
           ${transactions.join("\n")}
           
           Special rules:
-          - Anything containing 'HTSP' should be 'Transportation'
+          ${rules}
           `,
         },
       ],
@@ -70,52 +77,53 @@ type Props = {
   setTransactions: React.Dispatch<React.SetStateAction<FireflyTransaction[]>>;
 };
 
-const categories = [
-  "Bill Payments",
-  "Dining",
-  "Education",
-  "Entertainment",
-  "Transportation",
-  "Groceries",
-  "Health",
-  "Home",
-  "Insurance",
-  "Misc",
-  "Paycheque",
-  "Savings and Investments",
-  "Taxes and government",
-  "Transfers",
-  "Utilities",
-  "Subscriptions",
-];
-
 export default function CategorizeButton({
   transactions,
   setTransactions,
 }: Props) {
-  async function handleCategorize() {
-    const transactionDescriptions = transactions.map(
-      (tx) => `${tx.description} : ${tx.amount.toFixed(2)}`
-    );
-    const response = await categorizeLLM(categories, transactionDescriptions);
-    const llmTransactions = JSON.parse(response).categories;
+  const [isCategorizing, setIsCategorizing] = useState(false);
+  const [categories] = useChromeStorage<string>(
+    "categories",
+    defaultCategories
+  );
+  const [rules] = useChromeStorage<string>("rules", "");
 
-    setTransactions((oldTransactions: FireflyTransaction[]) =>
-      oldTransactions.map((tx, index) => ({
-        ...tx,
-        category_name: llmTransactions[index] || "Uncategorized",
-      }))
-    );
-  }
+  const handleCategorize = async () => {
+    setIsCategorizing(true);
+    const transactionDescriptions = transactions.map((t) => t.description);
+    try {
+      const result = await categorizeLLM(
+        transactionDescriptions,
+        categories,
+        rules
+      );
+      const categorized = JSON.parse(result).categories as string[];
+      const newTransactions = transactions.map((t, i) => {
+        const newTransaction = { ...t };
+        newTransaction.category_name = categorized[i];
+        return newTransaction;
+      });
+      setTransactions(newTransactions);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsCategorizing(false);
+    }
+  };
 
   return (
     <Button
       className="text-black bg-blue-200 hover:bg-blue-300 group"
       size="sm"
       onClick={handleCategorize}
+      disabled={isCategorizing}
     >
-      <IoPlayOutline className="transition-transform duration-300 ease-in-out group-hover:scale-150" />
-      Categorize
+      {isCategorizing ? (
+        <Spinner />
+      ) : (
+        <IoPlayOutline className="transition-transform duration-300 ease-in-out group-hover:scale-150" />
+      )}
+      Auto-categorize
     </Button>
   );
 }
