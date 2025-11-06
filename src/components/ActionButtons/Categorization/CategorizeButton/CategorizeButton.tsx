@@ -8,7 +8,6 @@ import type { FireflyTransaction } from "@/chrome/core/types/firefly";
 async function categorizeLLM(categories: string[], transactions: string[]) {
   const ai = new GoogleGenAI({
     // apiKey: process.env.GEMINI_API_KEY,
-    apiKey: "AIzaSyBnuLcTBunCCL5F30gAxqIjePO7fKldqW8",
   });
   const config = {
     thinkingConfig: {

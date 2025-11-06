@@ -4,8 +4,8 @@ import { type FireflyTransaction } from "./chrome/core/types/firefly";
 
 import "./App.css";
 import TransactionsTable from "@/components/TransactionsTable";
-import ExportButton from "@/components/ExportButton";
-import CategorizeButton from "@/components/CategorizeButton/CategorizeButton";
+
+import ActionButtons from "@/components/ActionButtons";
 
 export default function App() {
   const [transactions, setTransactions] = useState<FireflyTransaction[]>([]);
@@ -17,7 +17,7 @@ export default function App() {
     function handleMessage(message: any) {
       if (message.type === "FIREFLY_III_TRANSACTION") {
         setPluginName(message.data.pluginName);
-        setData(message.data.transactions);
+        setTransactions(message.data.transactions);
       }
     }
 
@@ -38,15 +38,12 @@ export default function App() {
             v0.0.1
           </pre>
         </div>
-        <div className="flex space-x-6 bg-red-200">
-          <div>sup</div>
-          <div>sup</div>
-          <CategorizeButton
-            transactions={transactions}
-            setTransactions={setTransactions}
-          />
-          <ExportButton transactions={transactions} pluginName={pluginName} />
-        </div>
+
+        <ActionButtons
+          transactions={transactions}
+          setTransactions={setTransactions}
+          pluginName={pluginName}
+        />
       </div>
 
       <div className="font-bold">
