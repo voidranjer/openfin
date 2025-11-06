@@ -1,3 +1,6 @@
+import { FiDownload } from "react-icons/fi";
+
+import { Button } from "@/components/ui/button";
 import { type FireflyTransaction } from "@/chrome/core/types/firefly";
 
 type Props = {
@@ -44,12 +47,13 @@ export default function ExportButton({ transactions, pluginName }: Props) {
   }
 
   return (
-    <button
-      className="bg-purple-200 font-bold px-2 rounded hover:bg-purple-300 hover:cursor-pointer"
-      type="button"
+    <Button
+      className="text-black bg-purple-200 hover:bg-purple-300"
+      size="sm"
       onClick={exportCSV}
     >
+      <FiDownload />
       Export
-    </button>
+    </Button>
   );
 }

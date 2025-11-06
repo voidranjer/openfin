@@ -5,9 +5,10 @@ import { type FireflyTransaction } from "./chrome/core/types/firefly";
 import "./App.css";
 import TransactionsTable from "@/components/TransactionsTable";
 import ExportButton from "@/components/ExportButton";
+import CategorizeButton from "@/components/CategorizeButton/CategorizeButton";
 
 export default function App() {
-  const [data, setData] = useState<FireflyTransaction[]>([]);
+  const [transactions, setTransactions] = useState<FireflyTransaction[]>([]);
   const [pluginName, setPluginName] = useState<string>("");
 
   useEffect(() => {
@@ -37,14 +38,22 @@ export default function App() {
             v0.0.1
           </pre>
         </div>
-        <ExportButton transactions={data} pluginName={pluginName} />
+        <div className="flex space-x-6 bg-red-200">
+          <div>sup</div>
+          <div>sup</div>
+          <CategorizeButton
+            transactions={transactions}
+            setTransactions={setTransactions}
+          />
+          <ExportButton transactions={transactions} pluginName={pluginName} />
+        </div>
       </div>
 
       <div className="font-bold">
         Plugin: {pluginName || "No plugin detected"}
       </div>
 
-      <TransactionsTable transactions={data} />
+      <TransactionsTable transactions={transactions} />
     </div>
   );
 }
