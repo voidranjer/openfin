@@ -90,7 +90,15 @@ export default function CategorizeButton({
 
   const handleCategorize = async () => {
     setIsCategorizing(true);
-    const transactionDescriptions = transactions.map((t) => t.description);
+    const transactionDescriptions = transactions.map((t) =>
+      [
+        `"${t.date}"`,
+        `"${t.description}"`,
+        t.amount,
+        t.type,
+        `"${t.notes}"`,
+      ].join(",")
+    );
     try {
       const result = await categorizeLLM(
         transactionDescriptions,

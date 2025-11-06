@@ -20,12 +20,12 @@ export default function ExportButton({ transactions, pluginName }: Props) {
       "Notes",
     ];
     const rows = transactions.map((tx) => [
-      tx.external_id,
-      tx.description,
-      tx.date,
-      tx.category_name,
+      `"${tx.external_id}"`,
+      `"${tx.description}"`,
+      `"${tx.date}"`,
+      `"${tx.category_name}"`,
       tx.type === "withdrawal" ? `-${tx.amount}` : tx.amount,
-      tx.notes ?? "",
+      `"${tx.notes ?? ""}"`,
     ]);
 
     const pluginNameSnakeCase = pluginName.replace(/\s+/g, "_").toLowerCase();

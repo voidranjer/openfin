@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import useChromeStorage from "@/hooks/useChromeStorage";
 
 export const defaultCategories =
-  "Bill Payments, Dining, Education, Entertainment, Transportation, Groceries, Health, Home, Insurance, Misc, Paycheque, Savings and Investments, Taxes and government, Transfers, Utilities, Subscriptions";
+  "Allowance, Credit Card Payments, Dining, Education, Entertainment, Transportation, Groceries, Health, Home, Insurance, Misc, Paycheque, Savings and Investments, Taxes and government, Transfers, Utilities, Subscriptions";
 
 type Props = {
   isOpen: boolean;
