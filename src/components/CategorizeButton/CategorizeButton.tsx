@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type React from "react";
-import { FaPlay } from "react-icons/fa";
+import { IoPlayOutline } from "react-icons/io5";
 
 import { Button } from "@/components/ui/button";
 import type { FireflyTransaction } from "@/chrome/core/types/firefly";
@@ -8,6 +8,7 @@ import type { FireflyTransaction } from "@/chrome/core/types/firefly";
 async function categorizeLLM(categories: string[], transactions: string[]) {
   const ai = new GoogleGenAI({
     // apiKey: process.env.GEMINI_API_KEY,
+    apiKey: "AIzaSyBnuLcTBunCCL5F30gAxqIjePO7fKldqW8",
   });
   const config = {
     thinkingConfig: {
@@ -114,7 +115,7 @@ export default function CategorizeButton({
       size="sm"
       onClick={handleCategorize}
     >
-      <FaPlay />
+      <IoPlayOutline />
       Categorize
     </Button>
   );
