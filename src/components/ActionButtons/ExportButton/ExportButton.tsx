@@ -24,7 +24,7 @@ export default function ExportButton({ transactions, pluginName }: Props) {
       tx.description,
       tx.date,
       tx.category_name,
-      tx.amount,
+      tx.type === "withdrawal" ? `-${tx.amount}` : tx.amount,
       tx.notes ?? "",
     ]);
 
