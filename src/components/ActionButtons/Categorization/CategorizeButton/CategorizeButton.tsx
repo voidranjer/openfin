@@ -9,13 +9,12 @@ import { defaultCategories } from "@/components/ActionButtons/Categorization/Cat
 import useChromeStorage from "@/hooks/useChromeStorage";
 
 async function categorizeLLM(
+  apiKey: string,
   transactions: string[],
   categories: string,
   rules: string
 ) {
-  const ai = new GoogleGenAI({
-    // apiKey: process.env.GEMINI_API_KEY,
-  });
+  const ai = new GoogleGenAI({ apiKey });
   const config = {
     thinkingConfig: {
       thinkingBudget: 0,
@@ -87,6 +86,7 @@ export default function CategorizeButton({
     defaultCategories
   );
   const [rules] = useChromeStorage<string>("rules", "");
+  const [apiKey] = useChromeStorage<string>("apiKey", "");
 
   const handleCategorize = async () => {
     setIsCategorizing(true);
@@ -101,6 +101,7 @@ export default function CategorizeButton({
     );
     try {
       const result = await categorizeLLM(
+        apiKey,
         transactionDescriptions,
         categories,
         rules

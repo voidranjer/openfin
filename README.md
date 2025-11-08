@@ -1,6 +1,6 @@
 # OpenFin – Finance Data Importer
 
-A privacy-first browser extension that captures transactions from online banking sessions and categorize them based on user defined rules using an LLM.
+A local-first browser extension that captures transactions from online banking sessions and categorize them based on user defined rules using an LLM.
 
 ![Preview](docs/preview.png)
 
