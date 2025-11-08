@@ -3,15 +3,18 @@ import { useEffect, useState } from "react";
 import { type FireflyTransaction } from "./chrome/core/types/firefly";
 
 import "./App.css";
-import TransactionsTable from "@/components/TransactionsTable";
 
+import TransactionsTable from "@/components/TransactionsTable";
 import ActionButtons from "@/components/ActionButtons";
+import { getChromeContext } from "@/lib/utils";
 
 export default function App() {
   const [transactions, setTransactions] = useState<FireflyTransaction[]>([]);
   const [pluginName, setPluginName] = useState<string>("");
 
   useEffect(() => {
+    if (getChromeContext() !== 'extension') return;
+
     chrome.runtime.connect({ name: "sidepanel" });
 
     function handleMessage(message: any) {

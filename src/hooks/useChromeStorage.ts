@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { getChromeContext } from "@/lib/utils";
 
 type StorageArea = "local" | "sync" | "managed";
 
@@ -14,6 +15,8 @@ function useChromeStorage<T>(
   const [storedValue, setStoredValue] = useState<T>(initialValue);
 
   useEffect(() => {
+    if (getChromeContext() !== "extension") return;
+
     const handleStorageChange = (
       changes: { [key: string]: chrome.storage.StorageChange },
       areaName: string
@@ -57,6 +60,9 @@ function useChromeStorage<T>(
 
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {
+
+      if (getChromeContext() !== "extension") return;
+
       const valueToStore =
         value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
@@ -71,6 +77,7 @@ function useChromeStorage<T>(
           }
         }
       );
+
     },
     [key, storageArea, storedValue]
   );
