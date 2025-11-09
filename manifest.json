@@ -4,27 +4,22 @@
   "version": "1.0",
   "manifest_version": 3,
   "action": {
-    "default_icon": "src/chrome/openfin.png",
+    "default_icon": "docs/openfin.png",
     "default_title": "Click to open panel"
   },
   "background": {
-    "service_worker": "dist/chrome/background.js",
+    "service_worker": "packages/chrome/dist/background.js",
     "type": "module"
   },
   "side_panel": {
-    "default_path": "dist/index.html"
+    "default_path": "packages/side-panel/dist/index.html"
   },
   "content_scripts": [
     {
-      "js": ["dist/chrome/bridge.js"],
+      "js": ["packages/chrome/dist/bridge.js"],
       "matches": ["<all_urls>"],
       "run_at": "document_start"
     }
   ],
-  "permissions": [
-    "storage",
-    "sidePanel",
-    "tabs",
-    "debugger"
-  ]
+  "permissions": ["storage", "sidePanel", "tabs", "debugger"]
 }

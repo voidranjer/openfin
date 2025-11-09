@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.vanilla.json",
+
+  "compilerOptions": {
+    "types": ["vite/client", "chrome"], // modification: "@types/chrome"
+
+    /* Import aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+
+  "include": ["src"]
+}

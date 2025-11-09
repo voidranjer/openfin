@@ -1,0 +1,1 @@
+Must be independent of the chrome API or React.
