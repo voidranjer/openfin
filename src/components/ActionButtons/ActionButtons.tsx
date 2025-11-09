@@ -6,20 +6,8 @@ import { Button } from "@/components/ui/button";
 import ExportButton from "@/components/ActionButtons/ExportButton";
 import CategorizeButton from "@/components/ActionButtons/Categorization/CategorizeButton";
 import CategoryConfigDialog from "@/components/ActionButtons/Categorization/CategoryConfigDialog";
-import type { FireflyTransaction } from "@/chrome/core/types/firefly";
 
-type Props = {
-  pluginName: string;
-  // categories: string[];
-  transactions: FireflyTransaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<FireflyTransaction[]>>;
-};
-
-export default function ActionButtons({
-  pluginName,
-  transactions,
-  setTransactions,
-}: Props) {
+export default function ActionButtons() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -27,10 +15,7 @@ export default function ActionButtons({
       <CategoryConfigDialog isOpen={isOpen} setIsOpen={setIsOpen} />
       <ButtonGroup>
         <ButtonGroup>
-          <CategorizeButton
-            transactions={transactions}
-            setTransactions={setTransactions}
-          />
+          <CategorizeButton />
           <Button
             size="sm"
             className="bg-red-200 hover:bg-red-300 group"
@@ -40,7 +25,7 @@ export default function ActionButtons({
           </Button>
         </ButtonGroup>
         <ButtonGroup>
-          <ExportButton transactions={transactions} pluginName={pluginName} />
+          <ExportButton />
         </ButtonGroup>
       </ButtonGroup>
     </>

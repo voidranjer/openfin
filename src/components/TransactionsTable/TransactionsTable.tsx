@@ -2,12 +2,13 @@ import { Cell, Column, ColumnHeaderCell, Table } from "@blueprintjs/table";
 
 import { type FireflyTransaction } from "@/chrome/core/types/firefly";
 import { formatDate } from "@/chrome/core/utils";
+import useChromeStorage from "@/hooks/useChromeStorage";
 
-type Props = {
-  transactions: FireflyTransaction[];
-};
+export default function TransactionsTable() {
+  const [transactions] = useChromeStorage<FireflyTransaction[]>(
+    "transactions", []
+  );
 
-export default function TransactionsTable({ transactions }: Props) {
   const descriptionCellRenderer = (rowIndex: number) => (
     <Cell>{transactions[rowIndex].description}</Cell>
   );

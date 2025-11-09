@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { getChromeContext } from "@/lib/utils";
 
+export const CHROME_STORAGE_STRATEGY: StorageArea = "local";
+
 type StorageArea = "local" | "sync" | "managed";
 
 type StorageData<T> = {
@@ -10,7 +12,7 @@ type StorageData<T> = {
 function useChromeStorage<T>(
   key: string,
   initialValue: T,
-  storageArea: StorageArea = "local"
+  storageArea: StorageArea = CHROME_STORAGE_STRATEGY
 ) {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
 
@@ -36,6 +38,7 @@ function useChromeStorage<T>(
         );
         return;
       }
+
       if (result[key] !== undefined) {
         setStoredValue(result[key]);
       } else {
@@ -56,7 +59,9 @@ function useChromeStorage<T>(
     return () => {
       chrome.storage.onChanged.removeListener(handleStorageChange);
     };
-  }, [key, storageArea, initialValue]);
+
+    // here be dragons: under no circumstances should you include 'initialValue' in any dependency arrays in this hook due to infinite loops caused by referential equality ([] != [])
+  }, [key, storageArea]);
 
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {

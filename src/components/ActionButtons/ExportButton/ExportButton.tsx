@@ -2,13 +2,16 @@ import { FiDownload } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
 import { type FireflyTransaction } from "@/chrome/core/types/firefly";
+import useChromeStorage from "@/hooks/useChromeStorage";
 
-type Props = {
-  pluginName: string;
-  transactions: FireflyTransaction[];
-};
+export default function ExportButton() {
+  const [transactions] = useChromeStorage<FireflyTransaction[]>(
+    "transactions", []
+  );
+  const [pluginName] = useChromeStorage<string>(
+    "pluginName", "No plugins detected"
+  );
 
-export default function ExportButton({ transactions, pluginName }: Props) {
   function exportCSV() {
     // Convert data into CSV string
     const headers = [
@@ -33,8 +36,14 @@ export default function ExportButton({ transactions, pluginName }: Props) {
     const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
 
     // Create a blob and trigger download
+    // A Blob is a high-level representation of immutable raw data (data object)
+    // An ArrayBuffer is a generic, fixed-length, low-level binary data buffer. Manipulate through views like `TypedArray`
+    // Some methods on `Blob`: `.text()`, `.arrayBuffer()`, `.stream()`
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+
+    // const csvContent = new TextEncoder().encode(str); // converting to Uint8Array
+
+    const url = URL.createObjectURL(blob); // Tells the browser to create a link that points to the actual blob data object stored and managed by the browser
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", `${pluginNameSnakeCase}_transactions.csv`);

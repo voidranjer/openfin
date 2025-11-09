@@ -40,6 +40,8 @@ Write rules in plain English.
 - Mock 'chrome' API with localStorage. Using dynamic imports, inject mocks only in dev (don't pollute prod)
 - MkDocs documentation site (or just docs on gh)
 - Financial Institution support request form.
+- Refactor Vite build and file structure. World boundaries ("MAIN", "ISOLATED", and such) should be easily distinguishable. GUI code should not be "first class" and control the root of src/. Maybe use actual's workspaces/monorepo multiple package system.
+- matches: [<all_urls>] should maybe change. otherwise any website can do window.postMessage("request transactions")
 
 ## ⌨️ Developer
 

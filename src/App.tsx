@@ -1,34 +1,34 @@
-import { useEffect, useState } from "react";
-
-import { type FireflyTransaction } from "./chrome/core/types/firefly";
+import { useEffect } from "react";
 
 import "./App.css";
 
 import TransactionsTable from "@/components/TransactionsTable";
 import ActionButtons from "@/components/ActionButtons";
 import { getChromeContext } from "@/lib/utils";
+import useChromeStorage from "@/hooks/useChromeStorage";
 
 export default function App() {
-  const [transactions, setTransactions] = useState<FireflyTransaction[]>([]);
-  const [pluginName, setPluginName] = useState<string>("");
+  const [pluginName] = useChromeStorage<string>(
+    "pluginName", "No plugins detected"
+  );
 
   useEffect(() => {
     if (getChromeContext() !== 'extension') return;
 
-    chrome.runtime.connect({ name: "sidepanel" });
+    const background = chrome.runtime.connect({ name: "sidepanel" });
 
     function handleMessage(message: any) {
-      if (message.type === "FIREFLY_III_TRANSACTION") {
-        setPluginName(message.data.pluginName);
-        setTransactions(message.data.transactions);
+      if (message.name === "transactions-updated") {
+        // setPluginName(message.pluginName);
+        // setTransactions(message.data.transactions);
       }
     }
 
-    chrome.runtime.onMessage.addListener(handleMessage);
+    background.onMessage.addListener(handleMessage);
 
     // Cleanup listener on unmount
     return () => {
-      chrome.runtime.onMessage.removeListener(handleMessage);
+      background.onMessage.removeListener(handleMessage);
     };
   }, []);
 
@@ -42,18 +42,14 @@ export default function App() {
           </pre>
         </div>
 
-        <ActionButtons
-          transactions={transactions}
-          setTransactions={setTransactions}
-          pluginName={pluginName}
-        />
+        <ActionButtons />
       </div>
 
       <div className="font-bold">
-        Plugin: {pluginName || "No plugin detected"}
+        Plugin: {pluginName}
       </div>
 
-      <TransactionsTable transactions={transactions} />
+      <TransactionsTable />
     </div>
   );
 }

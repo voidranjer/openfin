@@ -4,7 +4,9 @@ import ScotiabankScenePlus from "./plugins/ScotiabankScenePlus";
 import ScotiabankChequing from "./plugins/ScotiabankChequing";
 import RBC from "./plugins/RBC";
 import DebuggerManager from "./DebuggerManager";
-//
+
+import { CHROME_STORAGE_STRATEGY } from "@/hooks/useChromeStorage";
+
 // Singleton: Debugger Manager
 const debuggerManager = new DebuggerManager();
 
@@ -41,7 +43,7 @@ function reattachDebuggerConditionally(baseUrl: string, tabId: number) {
 // Configuration: Allows users to open the side panel by clicking on the action toolbar icon
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 
-// Event: Send transactions to frontend
+// Event: Save transactions to storage and notify frontend to refresh
 debuggerManager.on("responseReceived", async (data) => {
   const { url, body, base64Encoded } = data;
 
@@ -62,9 +64,11 @@ debuggerManager.on("responseReceived", async (data) => {
   const jsonBody = await JSON.parse(body);
   const transactions = plugin.parseResponse(jsonBody);
 
+  chrome.storage[CHROME_STORAGE_STRATEGY].set({ transactions });
+
   chrome.runtime.sendMessage({
-    type: "FIREFLY_III_TRANSACTION",
-    data: { pluginName: plugin.displayName, transactions },
+    name: "transactions-updated",
+    pluginName: plugin.displayName,
   });
 });
 
@@ -109,6 +113,49 @@ chrome.tabs.onUpdated.addListener((_tabId, _info, tab) => {
   if (!tab.url || !tab.id || !tab.active) return;
 
   reattachDebuggerConditionally(tab.url, tab.id);
+});
+
+// Event: Handle CSV export request from web page
+chrome.runtime.onMessage.addListener((message, sender, _sendResponse) => {
+  if (message.name === "openfin-transactions-csv-request") {
+
+
+    // TODO: REFACTOR! DUPLICATED CODE HERE.
+
+
+
+    chrome.storage[CHROME_STORAGE_STRATEGY].get(["transactions"], (result) => {
+      const transactions = result.transactions || [];
+
+      // Convert transactions to CSV format
+      const headers = [
+        "Date",
+        "Description",
+        "Notes",
+        "Category",
+        "Amount",
+        "ID",
+      ];
+      const rows = transactions.map((tx: any) => [
+        `"${tx.date}"`,
+        `"${tx.description}"`,
+        `"${tx.notes ?? ""}"`,
+        `"${tx.category_name}"`,
+        tx.type === "withdrawal" ? `-${tx.amount}` : tx.amount,
+        `"${tx.external_id}"`,
+      ]);
+
+      const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
+
+      // Send response back to the requesting tab
+      if (sender.tab?.id) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          name: "openfin-transactions-csv-response",
+          data: csvContent,
+        });
+      }
+    });
+  }
 });
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {

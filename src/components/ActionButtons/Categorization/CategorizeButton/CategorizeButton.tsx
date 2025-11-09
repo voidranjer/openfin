@@ -70,17 +70,11 @@ async function categorizeLLM(
   return responseText;
 }
 
-type Props = {
-  // categories: string[];
-  transactions: FireflyTransaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<FireflyTransaction[]>>;
-};
-
-export default function CategorizeButton({
-  transactions,
-  setTransactions,
-}: Props) {
+export default function CategorizeButton() {
   const [isCategorizing, setIsCategorizing] = useState(false);
+  const [transactions, setTransactions] = useChromeStorage<FireflyTransaction[]>(
+    "transactions", []
+  );
   const [categories] = useChromeStorage<string>(
     "categories",
     defaultCategories
