@@ -1,57 +1,51 @@
 import { Plugin } from "@openbanker/core";
-import { parseDate } from "@openbanker/core/utils";
 import type { FireflyTransaction } from "@openbanker/core/types";
 
-import type { ChequingApiResponse } from "./types/scotiabank";
+// TODO: docs and comments about why scrape must be standalone function
+function scrape() {
 
-export default class ScotiabankChequing extends Plugin<ChequingApiResponse> {
-  constructor(fireflyAccountName: string) {
-    super(fireflyAccountName);
-    this.displayName = "Scotiabank Chequing";
-    this.iconUrl =
-      "https://ofa.on.ca/wp-content/uploads/2023/11/MicrosoftTeams-image-5.png";
+  // Converts "Nov 3, 2025" to "2025-11-03"
+  function convertDate(dateStr: string) {
+    const date = new Date(dateStr);
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${yyyy}-${mm}-${dd}`;
   }
 
-  getBaseUrlPattern(): RegExp {
+
+  const tableBody = document.querySelector("table.transactionTable tbody");
+  if (!tableBody) return [];
+
+  const rows = tableBody.querySelectorAll("tr[role='row']");
+
+  const rawTransactions = Array.from(rows).map((row) => {
+    const cols = row.querySelectorAll("td");
+    return Array.from(cols).map(col => col.innerText?.trim());
+  });
+
+  const transactions: FireflyTransaction[] = rawTransactions.map(cols => ({
+    date: convertDate(cols[0].slice(5)),
+    description: cols[2],
+    amount: parseFloat((cols[3] || cols[4]).replaceAll(/[-,\$\s]/g, "")),
+    type: cols[3] !== "" ? "withdrawal" : "deposit",
+    category_name: "",
+    external_id: ""
+  }))
+
+  return transactions;
+}
+
+export default class ScotiabankChequing extends Plugin {
+  constructor() {
+    super("Scotiabank Chequing");
+  }
+
+  getUrlPattern(): RegExp {
     return /secure\.scotiabank\.com\/accounts\/chequing/;
   }
 
-  getApiUrlPattern(): RegExp {
-    return /transaction-history.*accountType=DAYTODAY/;
-  }
-
-  parseResponse(responseBody: ChequingApiResponse) {
-    const transactions: FireflyTransaction[] = [];
-
-    responseBody.data.forEach((t) => {
-      const isWithdrawal = t.transactionType === "DEBIT";
-      const type = isWithdrawal ? "withdrawal" : "deposit";
-      const amount = t.transactionAmount.amount;
-      const description = t.cleanDescription;
-      const notes = t.userInputTag;
-      const category_name = t.category.description;
-      const date = parseDate(t.transactionDate);
-      const external_id = t.key;
-      const source_name = isWithdrawal ? this.fireflyAccountName : undefined;
-      const destination_name = isWithdrawal
-        ? undefined
-        : this.fireflyAccountName;
-
-      const payload: FireflyTransaction = {
-        type,
-        description,
-        notes,
-        category_name,
-        amount,
-        date,
-        external_id,
-        source_name,
-        destination_name,
-      };
-
-      transactions.push(payload);
-    });
-
-    return transactions;
+  getScrapingFunc() {
+    return scrape;
   }
 }

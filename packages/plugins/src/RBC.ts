@@ -1,54 +1,51 @@
 import { Plugin } from "@openbanker/core";
-import { parseDate } from "@openbanker/core/utils";
 import type { FireflyTransaction } from "@openbanker/core/types";
 
-import type { RbcApiResponse } from "./types/rbc";
+// TODO: docs and comments about why scrape must be standalone function
+function scrape() {
 
-export default class RBC extends Plugin<RbcApiResponse> {
-  constructor(fireflyAccountName: string) {
-    super(fireflyAccountName);
-    this.displayName = "RBC";
-    this.iconUrl =
-      "https://smitherschamber.com/wp-content/uploads/2025/02/royal-bank-smithers-bc-logo.jpg";
+  // Converts "Nov 3, 2025" to "2025-11-03"
+  function convertDate(dateStr: string) {
+    const date = new Date(dateStr);
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${yyyy}-${mm}-${dd}`;
   }
 
-  getBaseUrlPattern(): RegExp {
+
+  const table = document.querySelector("table.rbc-transaction-list-table");
+  if (!table) return [];
+
+  const rows = table.querySelectorAll("tr[data-role='transaction-list-table-transaction']");
+
+  const rawTransactions = Array.from(rows).map((row) => {
+    const cols = row.querySelectorAll("td");
+    return Array.from(cols).map(col => col.innerText?.trim());
+  });
+
+  const transactions: FireflyTransaction[] = rawTransactions.map(cols => ({
+    date: convertDate(cols[0]),
+    description: cols[1].split("\n")[1],
+    amount: parseFloat((cols[2] || cols[3]).replaceAll(/\$/g, "").trim()),
+    type: cols[2] !== "" ? "withdrawal" : "deposit",
+    category_name: cols[1].split("\n")[0],
+    external_id: ""
+  }))
+
+  return transactions;
+}
+
+export default class RBC extends Plugin {
+  constructor() {
+    super("RBC");
+  }
+
+  getUrlPattern(): RegExp {
     return /royalbank\.com/;
   }
 
-  getApiUrlPattern(): RegExp {
-    return /royalbank\.com.*transaction-presentation-service-v3-dbb/;
-  }
-
-  parseResponse(responseBody: RbcApiResponse) {
-    if (responseBody.hasError)
-      throw new Error("Invalid API response structure");
-
-    const transactions: FireflyTransaction[] = [];
-
-    responseBody.transactionList.forEach((t) => {
-      // if (t.activityStatus !== "APPROVED") {
-      //   console.warn(`Skipping non-approved transaction: ${t.merchant.name}`);
-      //   return;
-      // }
-
-      const isPayment = t.creditDebitIndicator === "DEBIT";
-
-      const payload: FireflyTransaction = {
-        type: isPayment ? "withdrawal" : "deposit",
-        description: t.description.length > 1 ? t.description[1] : "",
-        notes: t.notes,
-        category_name: t.description[0],
-        amount: t.amount,
-        date: parseDate(t.bookingDate),
-        external_id: t.id,
-        source_name: isPayment ? undefined : this.fireflyAccountName,
-        destination_name: isPayment ? this.fireflyAccountName : undefined,
-      };
-
-      transactions.push(payload);
-    });
-
-    return transactions;
+  getScrapingFunc() {
+    return scrape;
   }
 }

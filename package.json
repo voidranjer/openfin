@@ -1,33 +1,9 @@
 {
   "name": "openbanker",
   "version": "0.0.1",
-  "description": "A local-first finance importer",
-  "homepage": "https://github.com/voidranjer/openbanker/",
-  "bugs": {
-    "url": "https://github.com/voidranjer/openbanker/issues/"
-  },
   "repository": {
     "type": "git",
     "url": "git@github.com:voidranjer/openbanker.git"
-  },
-  "license": "MIT",
-  "workspaces": {
-    "packages": [
-      "packages/*"
-    ]
-  },
-  "scripts": {
-    "dev": "yarn workspaces foreach --all --topological --parallel run dev",
-    "build": "yarn workspaces foreach --all --topological --parallel run build",
-    "dev:side-panel": "yarn workspace @openbanker/side-panel dev",
-    "build:side-panel": "yarn workspace @openbanker/side-panel build",
-    "dev:chrome": "yarn workspace @openbanker/chrome dev",
-    "build:chrome": "yarn workspace @openbanker/chrome build",
-    "dev:core": "yarn workspace @openbanker/core dev",
-    "build:core": "yarn workspace @openbanker/core build",
-    "dev:plugins": "yarn workspace @openbanker/plugins dev",
-    "build:plugins": "yarn workspace @openbanker/plugins build",
-    "lint": "eslint ."
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
@@ -36,7 +12,23 @@
     "eslint-plugin-react-dom": "^2.0.6",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.22",
+    "turbo": "^2.6.0",
     "typescript-eslint": "^8.45.0"
   },
-  "packageManager": "yarn@4.11.0"
+  "bugs": {
+    "url": "https://github.com/voidranjer/openbanker/issues/"
+  },
+  "description": "A local-first finance importer",
+  "homepage": "https://github.com/voidranjer/openbanker/",
+  "license": "MIT",
+  "packageManager": "bun@1.3.2",
+  "scripts": {
+    "build": "turbo build",
+    "lint": "eslint ."
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  }
 }

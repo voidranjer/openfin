@@ -1,41 +1,17 @@
 import { FiDownload } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
-import { type FireflyTransaction } from "@openbanker/core/types";
+import { type TransactionList } from "@openbanker/core/types";
+import { toCSV } from "@openbanker/core/utils";
 import useChromeStorage from "@/hooks/useChromeStorage";
 
 export default function ExportButton() {
-  const [transactions] = useChromeStorage<FireflyTransaction[]>(
-    "transactions",
-    []
-  );
-  const [pluginName] = useChromeStorage<string>(
-    "pluginName",
-    "No plugins detected"
-  );
+  const [currTransactions] = useChromeStorage<TransactionList>("currTransactions", { transactions: [], pluginName: "" })
 
   function exportCSV() {
-    // Convert data into CSV string
-    const headers = [
-      "ID",
-      "Description",
-      "Date",
-      "Category",
-      "Amount",
-      "Notes",
-    ];
-    const rows = transactions.map((tx) => [
-      `"${tx.external_id}"`,
-      `"${tx.description}"`,
-      `"${tx.date}"`,
-      `"${tx.category_name}"`,
-      tx.type === "withdrawal" ? `-${tx.amount}` : tx.amount,
-      `"${tx.notes ?? ""}"`,
-    ]);
+    const pluginNameSnakeCase = currTransactions.pluginName.replace(/\s+/g, "_").toLowerCase();
 
-    const pluginNameSnakeCase = pluginName.replace(/\s+/g, "_").toLowerCase();
-
-    const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
+    const csvContent = toCSV(currTransactions.transactions);
 
     // Create a blob and trigger download
     // A Blob is a high-level representation of immutable raw data (data object)

@@ -3,31 +3,18 @@ import Plugin from "./Plugin";
 export default class PluginManager {
   private plugins: Plugin[] = [];
 
+  constructor(pluginList: Plugin[]) {
+    pluginList.forEach((plugin) => this.register(plugin));
+  }
+
   register(plugin: Plugin) {
     this.plugins.push(plugin);
   }
 
   findMatchingPlugin(baseUrl: string): Plugin | undefined {
     return this.plugins.find((plugin) => {
-      const pattern = plugin.getBaseUrlPattern();
+      const pattern = plugin.getUrlPattern();
       return pattern.test(baseUrl);
     });
-  }
-
-  findMatchingPluginByApiUrl(apiUrl: string): Plugin | undefined {
-    return this.plugins.find((plugin) => {
-      const pattern = plugin.getApiUrlPattern();
-      return pattern.test(apiUrl);
-    });
-  }
-
-  getRegisteredPlugins() {
-    return this.plugins.map((plugin) => ({
-      displayName: plugin.displayName,
-      iconUrl: plugin.iconUrl,
-      fireflyAccountName: plugin.fireflyAccountName,
-      baseUrlPattern: plugin.getBaseUrlPattern().source,
-      apiUrlPattern: plugin.getApiUrlPattern().source,
-    }));
   }
 }

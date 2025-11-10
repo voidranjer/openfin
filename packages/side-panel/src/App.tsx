@@ -2,38 +2,55 @@ import { useEffect } from "react";
 
 import "./App.css";
 
+import { PluginManager } from "@openbanker/core";
+import {
+  RBC,
+  Wealthsimple,
+  ScotiabankChequing,
+} from "@openbanker/plugins";
 import TransactionsTable from "@/components/TransactionsTable";
 import ActionButtons from "@/components/ActionButtons";
+import EmptyState from "@/components/EmptyState";
+import { type TransactionList, emptyTransactionList } from "@openbanker/core/types";
 import { getChromeContext } from "@/lib/utils";
 import useChromeStorage from "@/hooks/useChromeStorage";
 
 export default function App() {
-  const [pluginName] = useChromeStorage<string>(
-    "pluginName", "No plugins detected"
-  );
+  const [currTransactions, setCurrTransactions] = useChromeStorage<TransactionList>("currTransactions", emptyTransactionList())
+
 
   useEffect(() => {
     if (getChromeContext() !== 'extension') return;
 
-    const background = chrome.runtime.connect({ name: "sidepanel" });
+    // Reset chrome storage
+    setCurrTransactions(emptyTransactionList())
 
-    function handleMessage(message: any) {
-      if (message.name === "transactions-updated") {
-        // setPluginName(message.pluginName);
-        // setTransactions(message.data.transactions);
+    const pluginManager = new PluginManager([new RBC(), new ScotiabankChequing(), new Wealthsimple()]);
+
+    async function detectTransactions() {
+      let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab.url || !tab.id) return;
+
+      const plugin = pluginManager.findMatchingPlugin(tab.url);
+      if (plugin !== undefined) {
+
+        const res = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: plugin.getScrapingFunc(),
+        });
+
+        if (res && res[0] && res[0].result) {
+          setCurrTransactions({ pluginName: plugin.displayName, transactions: res[0].result });
+        }
+
       }
     }
+    detectTransactions();
 
-    background.onMessage.addListener(handleMessage);
-
-    // Cleanup listener on unmount
-    return () => {
-      background.onMessage.removeListener(handleMessage);
-    };
   }, []);
 
   return (
-    <div className="m-5 flex flex-col space-y-5">
+    <div className="m-5 flex flex-col space-y-5 min-w-[600px]">
       <div className="flex justify-between">
         <div className="flex space-x-1">
           <div className="text-3xl font-bold">OpenFin</div>
@@ -46,10 +63,11 @@ export default function App() {
       </div>
 
       <div className="font-bold">
-        Plugin: {pluginName}
+        Plugin: {currTransactions.pluginName}
       </div>
 
-      <TransactionsTable />
+      {currTransactions.pluginName === "" ? <EmptyState /> : <TransactionsTable transactions={currTransactions.transactions} />}
+
     </div>
   );
 }

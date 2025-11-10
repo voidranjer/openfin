@@ -1,30 +1,15 @@
 import type { FireflyTransaction } from "./types/firefly";
 
-export default abstract class Plugin<ApiResponse = unknown> {
-  fireflyAccountName: string;
+export default abstract class Plugin {
   displayName: string = "Unnamed Plugin";
-  iconUrl: string = "";
 
-  constructor(fireflyAccountName: string) {
-    this.fireflyAccountName = fireflyAccountName;
+  constructor(displayName: string) {
+    this.displayName = displayName;
   }
 
   // To match base URL for enabling the plugin
-  abstract getBaseUrlPattern(): RegExp;
+  abstract getUrlPattern(): RegExp;
 
-  // To match actual API request for parsing the response
-  abstract getApiUrlPattern(): RegExp;
-
-  abstract parseResponse(responseBody: ApiResponse): FireflyTransaction[];
-
-  handleApiRequest(
-    apiUrl: string,
-    responseBody: ApiResponse
-  ): FireflyTransaction[] | undefined {
-    const apiPattern = this.getApiUrlPattern();
-    if (apiPattern.test(apiUrl)) {
-      return this.parseResponse(responseBody);
-    }
-    return undefined;
-  }
+  // TODO: docs here on why this must be standalone function
+  abstract getScrapingFunc(): () => FireflyTransaction[];
 }

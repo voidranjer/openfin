@@ -2,13 +2,12 @@ import { Cell, Column, ColumnHeaderCell, Table } from "@blueprintjs/table";
 
 import { type FireflyTransaction } from "@openbanker/core/types";
 import { formatDate } from "@openbanker/core/utils";
-import useChromeStorage from "@/hooks/useChromeStorage";
 
-export default function TransactionsTable() {
-  const [transactions] = useChromeStorage<FireflyTransaction[]>(
-    "transactions",
-    []
-  );
+type Props = {
+  transactions: FireflyTransaction[];
+}
+
+export default function TransactionsTable({ transactions }: Props) {
 
   const descriptionCellRenderer = (rowIndex: number) => (
     <Cell>{transactions[rowIndex].description}</Cell>
@@ -63,7 +62,7 @@ export default function TransactionsTable() {
     },
   ];
 
-  const columnWidths = [100, 300, 150, 100, 300];
+  const columnWidths = [100, 200, 100, 100, 200];
 
   const headerRowRenderer = (colIdx: number) => (
     <ColumnHeaderCell className="text-center font-bold">

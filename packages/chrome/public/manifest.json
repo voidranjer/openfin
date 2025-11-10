@@ -1,0 +1,23 @@
+{
+  "name": "OpenFin",
+  "description": "Take back your financial data.",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_icon": "assets/actual.png",
+    "default_title": "Click to open panel",
+    "default_popup": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": ["bridge.js"],
+      "matches": ["<all_urls>"],
+      "run_at": "document_start"
+    }
+  ],
+  "permissions": ["storage", "activeTab", "scripting"]
+}
