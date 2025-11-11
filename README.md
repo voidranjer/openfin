@@ -1,20 +1,33 @@
-# OpenFin – Finance Data Importer
+# OpenBanker – Finance Data Importer
 
-A local-first browser extension that captures transactions from online banking sessions and categorize them based on user defined rules using an LLM.
+A local-first browser extension that captures transactions from online banking sessions and exports them to CSV or [ActualBudget](https://actualbudget.org/).
 
 ![Preview](docs/preview.png)
 
-Self-host your financial data! Nobody else needs access to your banking information to anybody else.
+Self-host your financial data! Nobody else needs access to your banking information.
 
 ## 🔗 Supported banks
 
-[List of supported financial institutions here]
+![Supported Banks](docs/extensions_menu.png)
+
+- **Royal Bank of Canada (RBC)**: Chequing
+- **Scotiabank**: Chequing, Credit Card
+- **Wealthsimple**: Chequing
+- **Rogers Bank**: Credit Card
 
 ## ⭐ Key Features
 
 ### Export
 
-Currently, OpenFin only exports to CSV (*which can be imported into budgeting apps like [ActualBudget](https://actualbudget.org/) or [Firefly III](https://www.firefly-iii.org/)*). In the future, OpenFin will either have [ActualBudget](https://actualbudget.org/) baked-in (frontend-based), or have auto-importers into other open-source budgeting apps.
+OpenBanker can export to CSV (*which can be imported into budgeting apps like [ActualBudget](https://actualbudget.org/) or [Firefly III](https://www.firefly-iii.org/)*).
+
+Additionally, this [fork of ActualBudget](https://github.com/voidranjer/actual) includes an "Import from OpenBanker" feature which directly imports from the plugin (no downloading required). Check out the live demo [here](https://actual.amperleft.com).
+
+![Export to ActualBudget](docs/import_from_openbanker.png)
+
+ActualBudget automatically detects duplicates, execute rules, and more.
+
+![Import Dialog](docs/import_dialog.png)
 
 ### Natural Language Rules
 
@@ -28,20 +41,11 @@ Write rules in plain English.
 
 ## 🗺️ Roadmap
 
-- Contributors
-- API key (and/or URL) settings in UI
-- gemini SDK to fetch REST API. dropdown for popular providers, and a "Custom" with user provided URL + token.
-- dropdown by default includes (Free Demo, before Dec deadline)
-- Add a "?" for what's being included/sent.
-- Backend: Rate limiting, prompt and response size limiting, etc. Security.
 - CI/CD for automating tagged builds
 - Unit testing
 - Mock transaction data for Vite dev server mode
 - Mock 'chrome' API with localStorage. Using dynamic imports, inject mocks only in dev (don't pollute prod)
-- MkDocs documentation site (or just docs on gh)
-- Financial Institution support request form.
-- Refactor Vite build and file structure. World boundaries ("MAIN", "ISOLATED", and such) should be easily distinguishable. GUI code should not be "first class" and control the root of src/. Maybe use actual's workspaces/monorepo multiple package system.
-- matches: [<all_urls>] should maybe change. otherwise any website can do window.postMessage("request transactions")
+- All 'window.postMessage' calls in bridge should verify origin of message before replying
 
 ## ⌨️ Developer
 
@@ -60,5 +64,3 @@ Search for feature guards like `getChromeContext() !== 'extension'` across the c
 ## 👏 Acknowledgements
 
 - [CWZMorro](https://github.com/CWZMorro) for creating the RBC plugin
-
-- [AdityaSriramTeja](https://github.com/AdityaSriramTeja) for the valuable feedback on MVP
