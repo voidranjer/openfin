@@ -55,7 +55,7 @@ export default function App() {
     <div className="m-5 flex flex-col space-y-5 min-w-[600px]">
       <div className="flex justify-between">
         <div className="flex space-x-1">
-          <div className="text-3xl font-bold">OpenFin</div>
+          <div className="text-3xl font-bold">OpenBanker</div>
           <pre className="flex items-start bg-blue-200 h-fit py-1 px-2 rounded scale-80">
             v0.0.1
           </pre>

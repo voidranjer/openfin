@@ -1,7 +1,7 @@
 {
-  "name": "OpenFin",
+  "name": "OpenBanker",
   "description": "Take back your financial data.",
-  "version": "1.0",
+  "version": "0.0.1",
   "manifest_version": 3,
   "action": {
     "default_icon": "assets/actual.png",
@@ -14,10 +14,18 @@
   },
   "content_scripts": [
     {
-      "js": ["bridge.js"],
-      "matches": ["<all_urls>"],
+      "js": [
+        "bridge.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ],
       "run_at": "document_start"
     }
   ],
-  "permissions": ["storage", "activeTab", "scripting"]
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ]
 }
