@@ -64,9 +64,14 @@ export default function App() {
         <ActionButtons />
       </div>
 
-      <div className="font-bold">
-        Plugin: {currTransactions.pluginName}
-      </div>
+      {
+        currTransactions.pluginName !== "" && (
+          < div className="font-bold">
+            Plugin: {currTransactions.pluginName}
+          </div>
+        )
+
+      }
 
       {currTransactions.pluginName === "" ? <EmptyState /> : <TransactionsTable transactions={currTransactions.transactions} />}
 
