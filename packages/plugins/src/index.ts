@@ -2,5 +2,6 @@ import RBC from "./RBC";
 import ScotiabankChequing from "./ScotiabankChequing";
 import ScotiabankCredit from "./ScotiabankCredit";
 import Wealthsimple from "./Wealthsimple";
+import RogersBank from "./RogersBank";
 
-export { RBC, ScotiabankChequing, Wealthsimple, ScotiabankCredit };
+export { RBC, ScotiabankChequing, Wealthsimple, ScotiabankCredit, RogersBank };

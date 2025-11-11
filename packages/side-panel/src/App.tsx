@@ -8,6 +8,7 @@ import {
   Wealthsimple,
   ScotiabankChequing,
   ScotiabankCredit,
+  RogersBank,
 } from "@openbanker/plugins";
 import TransactionsTable from "@/components/TransactionsTable";
 import ActionButtons from "@/components/ActionButtons";
@@ -26,7 +27,7 @@ export default function App() {
     // Reset chrome storage
     setCurrTransactions(emptyTransactionList())
 
-    const pluginManager = new PluginManager([new RBC(), new ScotiabankChequing(), new Wealthsimple(), new ScotiabankCredit()]);
+    const pluginManager = new PluginManager([new RBC(), new ScotiabankChequing(), new Wealthsimple(), new ScotiabankCredit(), new RogersBank()]);
 
     async function detectTransactions() {
       let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
