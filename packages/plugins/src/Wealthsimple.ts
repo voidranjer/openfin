@@ -29,12 +29,8 @@ function scrape() {
     const dateText = findPrevH2FromGrandparent(button)?.innerText ?? "";
     const details = button.innerText.split("\n\n");
 
-    console.log(details)
-
     const amountIdx = details.findIndex(text => currencies.some(currency => text.includes(currency)));
-    console.log(amountIdx);
     if (amountIdx === -1) { console.warn("Wealthsimple: failed to find amount in details:", details); }
-
 
     const regexArrayAmount = details[amountIdx].match(/\$([^\s]+)/);
     const amountStr = regexArrayAmount ? regexArrayAmount[1].replace(/,/g, '') : "0";
