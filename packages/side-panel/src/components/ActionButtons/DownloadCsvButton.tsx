@@ -1,12 +1,12 @@
 import { FiDownload } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
-import { type TransactionList } from "@openbanker/core/types";
+import { emptyTransactionStore } from "@openbanker/core/types";
 import { toCSV } from "@openbanker/core/utils";
 import useChromeStorage from "@/hooks/useChromeStorage";
 
-export default function ExportButton() {
-  const [currTransactions] = useChromeStorage<TransactionList>("currTransactions", { transactions: [], pluginName: "" })
+export default function DownloadCSVButton() {
+  const [currTransactions] = useChromeStorage("transactionStore", emptyTransactionStore())
 
   function exportCSV() {
     const pluginNameSnakeCase = currTransactions.pluginName.replace(/\s+/g, "_").toLowerCase();
@@ -40,7 +40,7 @@ export default function ExportButton() {
       onClick={exportCSV}
     >
       <FiDownload className="transition-transform duration-300 ease-in-out group-hover:scale-150" />
-      Export
+      CSV
     </Button>
   );
 }
