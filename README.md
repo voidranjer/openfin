@@ -19,9 +19,9 @@ Self-host your financial data! Nobody else needs access to your banking informat
 
 ### Export
 
-OpenBanker can export to CSV (*which can be imported into budgeting apps like [ActualBudget](https://actualbudget.org/) or [Firefly III](https://www.firefly-iii.org/)*).
+OpenBanker can export to CSV (_which can be imported into budgeting apps like [ActualBudget](https://actualbudget.org/) or [Firefly III](https://www.firefly-iii.org/)_).
 
-Additionally, this [fork of ActualBudget](https://github.com/voidranjer/actual) includes an "Import from OpenBanker" feature which directly imports from the plugin (no downloading required). Check out the live demo [here](https://actual.amperleft.com).
+Additionally, this [fork of ActualBudget](https://github.com/voidranjer/actual) includes an "Import from OpenBanker" feature which directly imports from the plugin (no downloading required). Check out the live demo [here](https://demo.openbanker.org).
 
 ![Export to ActualBudget](docs/import_from_openbanker.png)
 
@@ -33,7 +33,7 @@ ActualBudget automatically detects duplicates, execute rules, and more.
 
 Write rules in plain English.
 
- - **✅ E-transfers of between $950 and $1015 is "Rent".**
+- **✅ E-transfers of between $950 and $1015 is "Rent".**
 
 - ❌ `IF name.contains("E-transfer") AND (950 <= amount <= 1015) THEN category = "Rent"`.
 

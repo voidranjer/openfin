@@ -13,19 +13,19 @@ import {
 import TransactionsTable from "@/components/TransactionsTable";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
-import { type TransactionList, emptyTransactionList } from "@openbanker/core/types";
+import { emptyTransactionStore } from "@openbanker/core/types";
 import { getChromeContext } from "@/lib/utils";
 import useChromeStorage from "@/hooks/useChromeStorage";
 
 export default function App() {
-  const [currTransactions, setCurrTransactions] = useChromeStorage<TransactionList>("currTransactions", emptyTransactionList())
+  const [transactionStore, setTransactionStore] = useChromeStorage("transactionStore", emptyTransactionStore())
 
 
   useEffect(() => {
     if (getChromeContext() !== 'extension') return;
 
     // Reset chrome storage
-    setCurrTransactions(emptyTransactionList())
+    setTransactionStore(emptyTransactionStore())
 
     const pluginManager = new PluginManager([new RBC(), new ScotiabankChequing(), new Wealthsimple(), new ScotiabankCredit(), new RogersBank()]);
 
@@ -42,7 +42,7 @@ export default function App() {
         });
 
         if (res && res[0] && res[0].result) {
-          setCurrTransactions({ pluginName: plugin.displayName, transactions: res[0].result });
+          setTransactionStore({ pluginName: plugin.displayName, transactions: res[0].result });
         }
 
       }
@@ -65,15 +65,15 @@ export default function App() {
       </div>
 
       {
-        currTransactions.pluginName !== "" && (
+        transactionStore.pluginName !== "" && (
           < div className="font-bold">
-            Plugin: {currTransactions.pluginName}
+            Plugin: {transactionStore.pluginName}
           </div>
         )
 
       }
 
-      {currTransactions.pluginName === "" ? <EmptyState /> : <TransactionsTable transactions={currTransactions.transactions} />}
+      {transactionStore.pluginName === "" ? <EmptyState /> : <TransactionsTable transactions={transactionStore.transactions} />}
 
     </div>
   );

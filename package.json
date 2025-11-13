@@ -30,5 +30,9 @@
     "packages": [
       "packages/*"
     ]
+  },
+  "dependencies": {
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-tooltip": "^1.2.8"
   }
 }

@@ -1,15 +1,19 @@
-// Event: window.postMessage received from current web page
+/* Event: window.postMessage received from current web page */
 window.addEventListener("message", (event: MessageEvent) => {
   const { name } = event.data;
 
-  if (name === "openfin-transactions-csv-request") {
-    chrome.runtime.sendMessage({ name });
+  /* Relay */
+  if (typeof name === "string" && name.startsWith("openbanker-")) {
+    chrome.runtime.sendMessage(event.data);
+    return;
   }
 });
 
-// Event: Forward CSV export response from background.ts to current web page
+/* Event: Forward CSV export response from background.ts to current web page */
 chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
-  if (message.name === "openfin-transactions-csv-response") {
-    window.postMessage({ name: message.name, transactions: message.data });
+  const { name } = message;
+
+  if (typeof name === "string" && name.startsWith("openbanker-")) {
+    window.postMessage(message);
   }
 });
