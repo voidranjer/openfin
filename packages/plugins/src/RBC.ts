@@ -27,7 +27,7 @@ function scrape() {
   const transactions: FireflyTransaction[] = rawTransactions.map(cols => ({
     date: convertDate(cols[0]),
     description: cols[1].split("\n")[1],
-    amount: parseFloat((cols[2] || cols[3]).replaceAll(/\$/g, "").trim()),
+    amount: parseFloat((cols[2] || cols[3]).replaceAll(/[\$,\s-]/g, "").trim()),
     type: cols[2] !== "" ? "withdrawal" : "deposit",
     category_name: cols[1].split("\n")[0],
     external_id: ""
