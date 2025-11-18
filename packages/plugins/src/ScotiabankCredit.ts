@@ -1,8 +1,6 @@
-import { Plugin } from "@openbanker/core";
 import type { FireflyTransaction } from "@openbanker/core/types";
 
-// TODO: docs and comments about why scrape must be standalone function
-function scrape() {
+export default function scrape() {
 
   // Converts "Nov 3, 2025" to "2025-11-03"
   function convertDate(dateStr: string) {
@@ -39,18 +37,4 @@ function scrape() {
   }
 
   return transactions;
-}
-
-export default class ScotiabankCredit extends Plugin {
-  constructor() {
-    super("Scotiabank Credit");
-  }
-
-  getUrlPattern(): RegExp {
-    return /secure\.scotiabank\.com\/accounts\/credit/;
-  }
-
-  getScrapingFunc() {
-    return scrape;
-  }
 }

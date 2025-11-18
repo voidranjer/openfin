@@ -1,8 +1,6 @@
-import { Plugin } from "@openbanker/core";
 import type { FireflyTransaction } from "@openbanker/core/types";
 
-// TODO: docs and comments about why scrape must be standalone function
-function scrape() {
+export default function scrape() {
 
   // From button --> parent div --> parent div --> go backwards until find h2
   function findPrevH2FromGrandparent(element: HTMLElement): HTMLElement | null {
@@ -52,18 +50,4 @@ function scrape() {
   })
 
   return transactions;
-}
-
-export default class Wealthsimple extends Plugin {
-  constructor() {
-    super("Wealthsimple");
-  }
-
-  getUrlPattern(): RegExp {
-    return /my\.wealthsimple\.com/;
-  }
-
-  getScrapingFunc() {
-    return scrape;
-  }
 }

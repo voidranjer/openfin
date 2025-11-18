@@ -1,15 +1,8 @@
 import { useEffect } from "react";
 
 import "./App.css";
+import config from "@/config";
 
-import { PluginManager } from "@openbanker/core";
-import {
-  RBC,
-  Wealthsimple,
-  ScotiabankChequing,
-  ScotiabankCredit,
-  RogersBank,
-} from "@openbanker/plugins";
 import TransactionsTable from "@/components/TransactionsTable";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
@@ -27,22 +20,20 @@ export default function App() {
     // Reset chrome storage
     setTransactionStore(emptyTransactionStore())
 
-    const pluginManager = new PluginManager([new RBC(), new ScotiabankChequing(), new Wealthsimple(), new ScotiabankCredit(), new RogersBank()]);
-
     async function detectTransactions() {
       let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab.url || !tab.id) return;
 
-      const plugin = pluginManager.findMatchingPlugin(tab.url);
+      const plugin = config.plugins.find(p => p.urlPattern.test(tab.url ?? "FALLBACK"));
       if (plugin !== undefined) {
 
         const res = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          func: plugin.getScrapingFunc(),
+          func: plugin.scrapeFunc,
         });
 
         if (res && res[0] && res[0].result) {
-          setTransactionStore({ pluginName: plugin.displayName, transactions: res[0].result });
+          setTransactionStore({ pluginName: plugin.name, transactions: res[0].result });
         }
 
       }

@@ -1,8 +1,6 @@
-import { Plugin } from "@openbanker/core";
 import type { FireflyTransaction } from "@openbanker/core/types";
 
-// TODO: docs and comments about why scrape must be standalone function
-function scrape() {
+export default function scrape() {
 
   // Converts "Nov 3, 2025" to "2025-11-03"
   function convertDate(dateStr: string) {
@@ -18,7 +16,7 @@ function scrape() {
   const tableBodies = document.querySelectorAll("table tbody");
 
   for (const [tableIdx, tableBody] of tableBodies.entries()) {
-    const isPendingTable = tableBodies.length > 1 && tableIdx === 0;
+    const isPendingTable = tableBodies.length > 1 && tableIdx === 1;
 
     let rows = Array.from(tableBody.querySelectorAll("tr"));
     if (isPendingTable) rows = rows.slice(0, rows.length - 1); // Last row is used to show "Total"
@@ -42,18 +40,4 @@ function scrape() {
   }
 
   return transactions;
-}
-
-export default class RogersBank extends Plugin {
-  constructor() {
-    super("Rogers Bank");
-  }
-
-  getUrlPattern(): RegExp {
-    return /selfserve\.rogersbank\.com\/transactions/;
-  }
-
-  getScrapingFunc() {
-    return scrape;
-  }
 }
