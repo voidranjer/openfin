@@ -17,5 +17,4 @@ export function emptyTransactionStore(): TransactionList {
 export type AppStorage = {
   transactionStore: TransactionList; // transactions marked for import into ActualBudget
   actualBudgetAccounts: ActualBudgetAccount[]; // ActualBudget accounts fetched from the app
-  currActualBudgetAccount: ActualBudgetAccount | null; // currently selected ActualBudget account
 }

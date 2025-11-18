@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,18 +14,14 @@ import { CiBank } from "react-icons/ci";
 import { HiChevronDown } from "react-icons/hi2";
 
 import useChromeStorage from "@/hooks/useChromeStorage";
+import type { ActualBudgetAccount } from "@openbanker/core/types";
 
 export default function SyncAccountsButton() {
   const [actualBudgetAccounts] = useChromeStorage("actualBudgetAccounts", []);
-  const [currActualBudgetAccount, setCurrActualBudgetAccount] = useChromeStorage("currActualBudgetAccount", null);
+  const [currActualBudgetAccount, setCurrActualBudgetAccount] = useState<ActualBudgetAccount | null>(null);
 
   function handleSyncAccounts() {
-    const popup = window.open("https://demo.openbanker.org/accounts?openBankerSync=true", "ActualBudget Sync", "width=400,height=300");
-
-    // Close popup after 1 second
-    setTimeout(() => {
-      popup?.close();
-    }, 2000);
+    window.open("https://demo.openbanker.org/accounts?openBankerSync=true", "_blank");
   }
 
   function handleExportToAccount() {
