@@ -1,10 +1,10 @@
 import { Cell, Column, ColumnHeaderCell, Table } from "@blueprintjs/table";
 
-import { type FireflyTransaction } from "@openbanker/core/types";
+import { type Transaction } from "@openbanker/core/types";
 import { formatDate } from "@openbanker/core/utils";
 
 type Props = {
-  transactions: FireflyTransaction[];
+  transactions: Transaction[];
 }
 
 export default function TransactionsTable({ transactions }: Props) {

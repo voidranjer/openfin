@@ -1,4 +1,4 @@
-import type { FireflyTransaction } from "@openbanker/core/types";
+import type { Transaction } from "@openbanker/core/types";
 
 export default function scrape() {
 
@@ -11,7 +11,7 @@ export default function scrape() {
     return `${yyyy}-${mm}-${dd}`;
   }
 
-  const transactions: FireflyTransaction[] = [];
+  const transactions: Transaction[] = [];
 
   const tableBodies = document.querySelectorAll("table.transactionTable tbody");
 

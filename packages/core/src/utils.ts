@@ -1,4 +1,4 @@
-import type { FireflyTransaction } from "./types";
+import type { Transaction } from "./types";
 
 // Convert 2025-05-31 to firefly format
 export function parseDate(d: string) {
@@ -26,7 +26,7 @@ export function formatDate(isoDateString: string): string {
   return `${day} ${month} ${year}`;
 }
 
-export function toCSV(transactions: FireflyTransaction[]) {
+export function toCSV(transactions: Transaction[]) {
   // Convert transactions to CSV format
   const headers = [
     "Date",

@@ -1,4 +1,4 @@
-import type { FireflyTransaction } from "@openbanker/core/types";
+import type { Transaction } from "@openbanker/core/types";
 
 export default function scrape() {
 
@@ -22,7 +22,7 @@ export default function scrape() {
     return Array.from(cols).map(col => col.innerText?.trim());
   });
 
-  const transactions: FireflyTransaction[] = rawTransactions.map(cols => ({
+  const transactions: Transaction[] = rawTransactions.map(cols => ({
     date: convertDate(cols[0].slice(5)),
     description: cols[2],
     amount: parseFloat((cols[3] || cols[4]).replaceAll(/[-,\$\s]/g, "")),

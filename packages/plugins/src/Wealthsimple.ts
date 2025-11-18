@@ -1,4 +1,4 @@
-import type { FireflyTransaction } from "@openbanker/core/types";
+import type { Transaction } from "@openbanker/core/types";
 
 export default function scrape() {
 
@@ -23,7 +23,7 @@ export default function scrape() {
     );
 
 
-  const transactions: FireflyTransaction[] = buttons.map(button => {
+  const transactions: Transaction[] = buttons.map(button => {
     const dateText = findPrevH2FromGrandparent(button)?.innerText ?? "";
     const details = button.innerText.split("\n\n");
 

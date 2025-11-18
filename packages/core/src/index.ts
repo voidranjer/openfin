@@ -1,4 +1,2 @@
-import Plugin from "./Plugin";
-import PluginManager from "./PluginManager";
-
-export { Plugin, PluginManager };
+// To prevent empty module warning
+export const PLACEHOLDER = "FOO";

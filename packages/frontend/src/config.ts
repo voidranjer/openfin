@@ -1,11 +1,11 @@
-import type { FireflyTransaction } from "@openbanker/core/types";
+import type { Transaction } from "@openbanker/core/types";
 
-import { ScotiabankCredit, ScotiabankChequing, RBC, RogersBank, Wealthsimple } from "@openbanker/plugins";
+import { ScotiabankCredit, ScotiabankChequing, RBC, RogersBank, Wealthsimple, NGPF } from "@openbanker/plugins";
 
 export type PluginConfig = {
   name: string;
   urlPattern: RegExp;
-  scrapeFunc: () => FireflyTransaction[];
+  scrapeFunc: () => Transaction[];
 }
 
 export type Config = {
@@ -38,6 +38,11 @@ const config: Config = {
       name: "Wealthsimple",
       urlPattern: /my\.wealthsimple\.com/,
       scrapeFunc: Wealthsimple
+    },
+    {
+      name: "NGPF",
+      urlPattern: /ngpf\.org\/bank-sim\/account/g,
+      scrapeFunc: NGPF
     }
   ]
 }

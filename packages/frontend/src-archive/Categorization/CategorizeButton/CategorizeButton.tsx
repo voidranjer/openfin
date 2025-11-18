@@ -4,7 +4,7 @@ import { IoPlayOutline } from "react-icons/io5";
 
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import type { FireflyTransaction } from "@openbanker/core/types";
+import type { Transaction } from "@openbanker/core/types";
 import { defaultCategories } from "@/components/ActionButtons/Categorization/CategoryConfigDialog/CategoryConfigDialog";
 import useChromeStorage from "@/hooks/useChromeStorage";
 
@@ -73,7 +73,7 @@ async function categorizeLLM(
 export default function CategorizeButton() {
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [transactions, setTransactions] = useChromeStorage<
-    FireflyTransaction[]
+    Transaction[]
   >("transactions", []);
   const [categories] = useChromeStorage<string>(
     "categories",
