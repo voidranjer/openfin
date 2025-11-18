@@ -8,13 +8,13 @@
   "type": "module",
   "scripts": {
     "dev": "tsc --watch & vite build --watch",
-    "build": "tsc && vite build && rsync -a ../side-panel/dist/* ./dist/"
+    "build": "tsc && vite build && rsync -a ../frontend/dist/* ./dist/"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.24",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
-    "@openbanker/side-panel": "workspace:*",
+    "@openbanker/frontend": "workspace:*",
     "@openbanker/core": "workspace:*"
   }
 }

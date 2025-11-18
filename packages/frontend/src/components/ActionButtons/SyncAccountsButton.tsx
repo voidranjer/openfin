@@ -18,7 +18,12 @@ export default function SyncAccountsButton() {
   const [currActualBudgetAccount, setCurrActualBudgetAccount] = useChromeStorage("currActualBudgetAccount", null);
 
   function handleSyncAccounts() {
-    window.open("https://demo.openbanker.org/accounts?openBankerSync=true", "_blank");
+    const popup = window.open("https://demo.openbanker.org/accounts?openBankerSync=true", "ActualBudget Sync", "width=400,height=300");
+
+    // Close popup after 1 second
+    setTimeout(() => {
+      popup?.close();
+    }, 2000);
   }
 
   function handleExportToAccount() {
