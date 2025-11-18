@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsc --watch & vite build --watch",
-    "build": "tsc && vite build && rsync -a ../frontend/dist/* ./dist/"
+    "build": "tsc && vite build && node scripts/copy-frontend.js"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.24",

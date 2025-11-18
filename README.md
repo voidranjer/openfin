@@ -18,6 +18,7 @@ These are some banks that are officially supported by the maintainers.
 - **Scotiabank**: Chequing, Credit Card
 - **Wealthsimple**: Chequing
 - **Rogers Bank**: Credit Card
+- **[NGPF Bank Simulator](https://www.ngpf.org/bank-sim/account)**: Demo website that works out the box. No login required.
 
 ## ⭐ Key Features
 
@@ -25,9 +26,9 @@ These are some banks that are officially supported by the maintainers.
 
 OpenBanker can export to CSV files. Columns are formatted specifically to be a one-click upload to [ActualBudget](https://actualbudget.org/), no field-mapping required.
 
-### Export to [ActualBudget](https://github.com/voidranjer/actual)
+### Export to ActualBudget
 
-Additionally, this [fork of ActualBudget](https://github.com/voidranjer/actual) is customized to communicate directly with OpenBanker.
+This [fork of ActualBudget](https://github.com/voidranjer/actual) is customized to communicate directly with OpenBanker.
 
 Using this fork, you can import transactions directly into ActualBudget without downloading and uploading CSV files, which is convenient for high-frequency import workflows.
 
@@ -39,31 +40,25 @@ Using this fork, you can import transactions directly into ActualBudget without 
 
 ![Export to ActualBudget](docs/images/import_from_openbanker.png)
 
-### Natural Language Rules
-
-Write rules in plain English.
-
-- **✅ E-transfers of between $950 and $1015 is "Rent".**
-
-- ❌ `IF name.contains("E-transfer") AND (950 <= amount <= 1015) THEN category = "Rent"`.
-
-![Natural language rules](docs/images/natural_lang_rules.png)
-
 ## 📦 Installation
 
-📦 <https://formulae.brew.sh/formula/rsync>
+While we work on getting OpenBanker published to the Firefox and Chrome Web Store, you must build this project to install it, for now.
+
+> Only Chrome (and Chrome-based browsers like Edge, Brave, Opera, Vivaldi) is supported. We are working on a Firefox port.
+
+1. Install the build dependencies: [Node.js](https://nodejs.org/en/download), [bun](https://bun.com/docs/installation).
+
+2. From the **root** directory, run `bun install` (`npm i` is likely to work too, but is untested).
+
+3. Run `npm run build` from the root directory.
+
+4. Load the generated folder at "packages/chrome/dist" as an unpacked extension, following [these instructions](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked).
+
+5. [Write your own bank module](/docs/PLUGINS.md), rebuild the project, and reload the extension in the browser.
 
 ## 🗺️ Roadmap
 
-- CI/CD for automating tagged builds
-- Unit testing
-- Mock transaction data for Vite dev server mode
-- Mock 'chrome' API with localStorage. Using dynamic imports, inject mocks only in dev (don't pollute prod)
-- All 'window.postMessage' calls in bridge should verify origin of message before replying
-- Actual fork behaviour: import should skip duplicates by default
-- Upstream: ImportTransactionModal --> onCheckTransaction (3-state): General "select all" mechanism - perhaps header checkmark handles (Select/Deselect - 2 states). Deselect all, manually select new transactions
-- Upstream: ImportTransaction (be) --> import mapping templates (default + editable)
-- "Sync" button hardcoded URL: build step to dynamically read this from JSON config?
+See [ROADMAP.md](/docs/ROADMAP.md).
 
 ## ⌨️ Developer
 
