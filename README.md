@@ -18,7 +18,7 @@ These are some banks that are officially supported by the maintainers.
 - **Scotiabank**: Chequing, Credit Card
 - **Wealthsimple**: Chequing
 - **Rogers Bank**: Credit Card
-- **[NGPF Bank Simulator](https://www.ngpf.org/bank-sim/account)**: Demo website that works out the box. No login required.
+- **[NGPF Bank Simulator](https://www.ngpf.org/bank-sim/account)**: Demo website that works out the box. Navigate to **Accounts >> Account Activity** first, then click on the OpenBanker extension icon to show the popup.
 
 ## ⭐ Key Features
 

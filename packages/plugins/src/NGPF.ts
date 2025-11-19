@@ -1,6 +1,6 @@
 import type { Transaction } from "@openbanker/core/types";
 
-export default function scrape() {
+export default function scrape(): Transaction[] {
   /* 
    * Converts "11/17/2025" to "2025-11-17"
    * 'scrape' functions must be entirely self contained, so this function must be declared inside the 'scrape' function body
