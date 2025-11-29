@@ -6,9 +6,11 @@ import config from "@/config";
 import TransactionsTable from "@/components/TransactionsTable";
 import ActionButtons from "@/components/ActionButtons";
 import EmptyState from "@/components/EmptyState";
-import { emptyTransactionStore } from "@openbanker/core/types";
+// Import Transaction type to use it for casting
+import { emptyTransactionStore, type Transaction } from "@openbanker/core/types";
 import { getChromeContext } from "@/lib/utils";
 import useChromeStorage from "@/hooks/useChromeStorage";
+import browser from "webextension-polyfill";
 
 export default function App() {
   const [transactionStore, setTransactionStore] = useChromeStorage("transactionStore", emptyTransactionStore())
@@ -21,25 +23,24 @@ export default function App() {
     setTransactionStore(emptyTransactionStore())
 
     async function detectTransactions() {
-      let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      let [tab] = await browser.tabs.query({ active: true, currentWindow: true });
       if (!tab.url || !tab.id) return;
 
       const plugin = config.plugins.find(p => p.urlPattern.test(tab.url ?? "FALLBACK"));
       if (plugin !== undefined) {
 
-        const res = await chrome.scripting.executeScript({
+        const res = await browser.scripting.executeScript({
           target: { tabId: tab.id },
           func: plugin.scrapeFunc,
         });
 
         if (res && res[0] && res[0].result) {
-          setTransactionStore({ pluginName: plugin.name, transactions: res[0].result });
+          const transactions = res[0].result as Transaction[];
+          setTransactionStore({ pluginName: plugin.name, transactions });
         }
-
       }
     }
     detectTransactions();
-
   }, []);
 
   return (

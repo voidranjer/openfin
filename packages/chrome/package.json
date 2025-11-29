@@ -7,14 +7,20 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "tsc --watch & vite build --watch",
-    "build": "tsc && vite build && node scripts/copy-frontend.js"
+    "dev": "cross-env TARGET=chrome tsc --watch & vite build --watch",
+    "build": "tsc && npm run build:chrome && npm run build:firefox",
+    "build:chrome": "cross-env TARGET=chrome vite build && node scripts/copy-frontend.js chrome",
+    "build:firefox": "cross-env TARGET=firefox vite build && node scripts/copy-frontend.js firefox"
   },
   "devDependencies": {
-    "@types/chrome": "^0.1.24",
-    "typescript": "~5.9.3",
-    "vite": "^7.1.7",
+    "@openbanker/core": "workspace:*",
     "@openbanker/frontend": "workspace:*",
-    "@openbanker/core": "workspace:*"
+    "@types/chrome": "^0.1.24",
+    "@types/webextension-polyfill": "^0.12.4",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.12.0"
   }
 }

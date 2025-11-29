@@ -1,0 +1,12 @@
+{
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "openbanker@voidranjer", 
+      "strict_min_version": "109.0"
+    }
+  }
+}
