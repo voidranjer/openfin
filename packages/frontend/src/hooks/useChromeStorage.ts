@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { type AppStorage } from "@openbanker/core/types";
 import { getChromeContext } from "@/lib/utils";
+import browser from "webextension-polyfill";
 
 export const CHROME_STORAGE_STRATEGY: StorageArea = "local";
 
@@ -26,7 +27,7 @@ function useChromeStorage<K extends keyof AppStorage>(
     if (getChromeContext() !== "extension") return;
 
     const handleStorageChange = (
-      changes: { [key: string]: chrome.storage.StorageChange },
+      changes: { [key: string]: browser.Storage.StorageChange },
       areaName: string
     ) => {
       if (areaName === storageArea && key in changes) {
@@ -34,35 +35,25 @@ function useChromeStorage<K extends keyof AppStorage>(
       }
     };
 
-    chrome.storage.onChanged.addListener(handleStorageChange);
+    browser.storage.onChanged.addListener(handleStorageChange);
 
-    chrome.storage[storageArea].get([key], (result) => {
-      if (chrome.runtime.lastError) {
-        console.error(
-          `Error getting ${String(key)} from chrome.storage.${storageArea}:`,
-          chrome.runtime.lastError
-        );
-        return;
-      }
-
-      if (result[key] !== undefined) {
-        setStoredValue(result[key] as AppStorage[K]);
-      } else {
-        chrome.storage[storageArea].set({ [key]: initialValue }, () => {
-          if (chrome.runtime.lastError) {
-            console.error(
-              `Error setting initial ${String(
-                key
-              )} in chrome.storage.${storageArea}:`,
-              chrome.runtime.lastError
-            );
-          }
-        });
-      }
-    });
+    browser.storage[storageArea].get([key])
+      .then((result) => {
+        if (result[key] !== undefined) {
+          setStoredValue(result[key] as AppStorage[K]);
+        } else {
+          // If key doesn't exist, set the initial value
+          browser.storage[storageArea].set({ [key]: initialValue }).catch((err) => {
+             console.error(`Error setting initial value for ${String(key)}:`, err);
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(`Error getting ${String(key)} from storage:`, error);
+      });
 
     return () => {
-      chrome.storage.onChanged.removeListener(handleStorageChange);
+      browser.storage.onChanged.removeListener(handleStorageChange);
     };
   }, [key, initialValue, storageArea]);
 
@@ -73,13 +64,8 @@ function useChromeStorage<K extends keyof AppStorage>(
       const valueToStore =
         value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
-      chrome.storage[storageArea].set({ [key]: valueToStore }, () => {
-        if (chrome.runtime.lastError) {
-          console.error(
-            `Error setting ${String(key)} in chrome.storage.${storageArea}:`,
-            chrome.runtime.lastError
-          );
-        }
+      browser.storage[storageArea].set({ [key]: valueToStore }).catch((error) => {
+          console.error(`Error setting ${String(key)} in storage:`, error);
       });
     },
     [key, storageArea, storedValue]

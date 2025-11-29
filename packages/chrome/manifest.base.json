@@ -8,24 +8,12 @@
     "default_title": "Click to open panel",
     "default_popup": "index.html"
   },
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
-  },
   "content_scripts": [
     {
-      "js": [
-        "bridge.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ],
+      "js": ["bridge.js"],
+      "matches": ["<all_urls>"],
       "run_at": "document_start"
     }
   ],
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting"
-  ]
+  "permissions": ["storage", "activeTab", "scripting"]
 }
